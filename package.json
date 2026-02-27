@@ -7,7 +7,7 @@
     "acp": "./bin/acp.ts"
   },
   "scripts": {
-    "start": "tsx src/seller/runtime/seller.ts",
+    "start": "tsx --env-file=.env src/seller/runtime/seller.ts",
     "acp": "tsx bin/acp.ts",
     "setup": "tsx bin/acp.ts setup",
     "offering:create": "tsx bin/acp.ts sell create",

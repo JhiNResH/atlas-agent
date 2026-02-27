@@ -118,7 +118,33 @@ Specific action plan:
 **Next Action:** [one thing to do right now]
 
 ---
-*Powered by ATLAS — Travel Arbitrage Intelligence*`;
+*Powered by ATLAS — Travel Arbitrage Intelligence*
+
+---
+
+## 🚀 Want the Full Trip Plan?
+
+Flight research done. Ready to go deeper?
+
+**ATLAS Trip Planner** ($0.50) includes:
+- ✅ Hotel picks (budget / mid-range / splurge) with real prices
+- ✅ Visa requirements for US passport holders
+- ✅ Day-by-day itinerary (${durationDays ?? 7} days)
+- ✅ Complete budget breakdown
+
+**Next job (copy & run):**
+\`\`\`json
+{
+  "offering": "trip_planner",
+  "requirements": {
+    "origin": "${origin}",
+    "destination": "${destination}",
+    "duration_days": 7,
+    "budget_total": "YOUR_BUDGET"
+  }
+}
+\`\`\`
+**Provider:** \`0xf4b48521960C7e78fCf89859c42d912cdcd0FC06\``;
 
   try {
     const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
@@ -151,7 +177,10 @@ function extractSummary(report: string) {
 // ── Execution ─────────────────────────────────────────────────────────────────
 export async function executeJob(requirements: Record<string, any>): Promise<ExecuteJobResult> {
   let origin =
-    requirements.origin || requirements.from || requirements.departure || requirements.origin_airport;
+    requirements.origin ||
+    requirements.from ||
+    requirements.departure ||
+    requirements.origin_airport;
   let destination =
     requirements.destination || requirements.to || requirements.dest || requirements.arrival;
 
@@ -165,8 +194,9 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       requirements.message || requirements.promo_message || Object.values(requirements).join(" ");
     if (raw) {
       const match =
-        raw.match(/(?:from\s+)?([A-Za-z\s]+?)\s+(?:to|→|->)\s+([A-Za-z\s]+?)(?:\s+in|\s+during|\s*$)/i) ||
-        raw.match(/([A-Z]{3})\s+(?:to|→|->)\s+([A-Z]{3})/i);
+        raw.match(
+          /(?:from\s+)?([A-Za-z\s]+?)\s+(?:to|→|->)\s+([A-Za-z\s]+?)(?:\s+in|\s+during|\s*$)/i
+        ) || raw.match(/([A-Z]{3})\s+(?:to|→|->)\s+([A-Z]{3})/i);
       if (match) {
         origin = origin || match[1]?.trim();
         destination = destination || match[2]?.trim();
@@ -180,13 +210,24 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
         error: "Missing route information",
         usage:
           'Provide { origin: "LAX", destination: "Tokyo" } or send "flights from LAX to Tokyo in May"',
-        example: { origin: "LAX", destination: "NRT", travel_month: "May 2025", budget: "$800 roundtrip" },
+        example: {
+          origin: "LAX",
+          destination: "NRT",
+          travel_month: "May 2025",
+          budget: "$800 roundtrip",
+        },
         poweredBy: "ATLAS — Travel Arbitrage Intelligence",
       }),
     };
   }
 
-  const report = await runAtlasAnalysis(origin.trim(), destination.trim(), travelMonth, budget, preferences);
+  const report = await runAtlasAnalysis(
+    origin.trim(),
+    destination.trim(),
+    travelMonth,
+    budget,
+    preferences
+  );
 
   if (!report) {
     return {
