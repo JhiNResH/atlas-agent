@@ -1,0 +1,28 @@
+{
+  "name": "conference_trip",
+  "description": "Full crypto conference trip planner. Flights + hotels near venue + side events schedule + budget breakdown. Input: conference name + origin city + budget. Output: everything you need to plan and book the trip. Supports TOKEN2049, ETHDenver, Consensus, Devcon, and all major crypto conferences.",
+  "jobFee": 0.6,
+  "jobFeeType": "fixed",
+  "requiredFunds": false,
+  "requirement": {
+    "type": "object",
+    "properties": {
+      "conference": { "type": "string", "description": "Conference name or slug" },
+      "origin": { "type": "string", "description": "Departure city or airport" },
+      "budget_total": { "type": "string", "description": "Total trip budget (e.g. '$3000')" },
+      "extra_days": { "type": "number", "description": "Extra days to stay post-conference" },
+      "trip_style": { "type": "string", "description": "budget / mid-range / luxury" },
+      "user_prefs": { "type": "object", "description": "Optional preferences" }
+    },
+    "required": ["conference", "origin"]
+  },
+  "deliverable": {
+    "type": "object",
+    "properties": {
+      "report": { "type": "string" },
+      "structured": { "type": "object" },
+      "next_step": { "type": "object", "description": "Pre-filled for multi_conference_router" },
+      "poweredBy": { "type": "string" }
+    }
+  }
+}

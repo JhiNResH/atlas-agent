@@ -1,0 +1,53 @@
+{
+  "name": "conference_travel",
+  "description": "Crypto conference flight optimizer. Tell ATLAS which conference you're attending and your departure city — it handles everything else: dates, airports, optimal booking window, cheapest airlines, points/miles value, and arrival timing for side events. Supports TOKEN2049, ETHDenver, Consensus, Devcon, Solana Breakpoint, Permissionless, ETHGlobal, and more.",
+  "jobFee": 0.25,
+  "jobFeeType": "fixed",
+  "requiredFunds": false,
+  "requirement": {
+    "type": "object",
+    "properties": {
+      "conference": {
+        "type": "string",
+        "description": "Conference name or slug (e.g. 'TOKEN2049 Singapore', 'ETHDenver', 'token2049-singapore-2026')"
+      },
+      "origin": {
+        "type": "string",
+        "description": "Your departure city or airport (e.g. 'LAX', 'New York', 'London')"
+      },
+      "extra_days": {
+        "type": "number",
+        "description": "Optional: extra days to stay after conference (default: 0)"
+      },
+      "budget": {
+        "type": "string",
+        "description": "Optional: flight budget (e.g. '$800', 'under $1500')"
+      },
+      "user_prefs": {
+        "type": "object",
+        "description": "Optional: { points: 'Chase UR 80k', max_layovers: 1, seat: 'aisle' }"
+      }
+    },
+    "required": ["conference", "origin"]
+  },
+  "deliverable": {
+    "type": "object",
+    "properties": {
+      "report": { "type": "string" },
+      "structured": {
+        "type": "object",
+        "properties": {
+          "conference_name": { "type": "string" },
+          "destination_airport": { "type": "string" },
+          "recommended_arrival": { "type": "string" },
+          "recommended_departure": { "type": "string" },
+          "price_range": { "type": "string" },
+          "book_by": { "type": "string" },
+          "top_airline": { "type": "string" }
+        }
+      },
+      "next_step": { "type": "object", "description": "Pre-filled input for conference_trip" },
+      "poweredBy": { "type": "string" }
+    }
+  }
+}

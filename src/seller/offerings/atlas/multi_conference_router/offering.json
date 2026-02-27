@@ -1,0 +1,50 @@
+{
+  "name": "multi_conference_router",
+  "description": "Full-year crypto conference routing optimizer. Input a list of conferences you plan to attend + your home city. ATLAS calculates whether doing multi-stop trips saves money vs separate roundtrips, finds the optimal routing order, and gives per-conference booking windows. Best for crypto degens attending 3+ conferences per year. Supports all major conferences: TOKEN2049, ETHDenver, Consensus, Devcon, Solana Breakpoint, and more.",
+  "jobFee": 0.8,
+  "jobFeeType": "fixed",
+  "requiredFunds": false,
+  "requirement": {
+    "type": "object",
+    "properties": {
+      "conferences": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "List of conference names or slugs (e.g. ['TOKEN2049 Singapore', 'ETHDenver', 'Devcon'])"
+      },
+      "origin": {
+        "type": "string",
+        "description": "Your home city or airport (e.g. 'LAX', 'New York', 'London')"
+      },
+      "year": {
+        "type": "number",
+        "description": "Year to plan for (default: 2026)"
+      },
+      "budget_total": {
+        "type": "string",
+        "description": "Optional: total annual travel budget"
+      },
+      "user_prefs": {
+        "type": "object",
+        "description": "Optional: { points: 'Amex MR 120k', max_trip_length: 14, preferred_class: 'economy' }"
+      }
+    },
+    "required": ["conferences", "origin"]
+  },
+  "deliverable": {
+    "type": "object",
+    "properties": {
+      "report": { "type": "string" },
+      "structured": {
+        "type": "object",
+        "properties": {
+          "separate_roundtrips_cost": { "type": "string" },
+          "optimized_routing_cost": { "type": "string" },
+          "estimated_savings": { "type": "string" },
+          "recommended_routing": { "type": "array" }
+        }
+      },
+      "poweredBy": { "type": "string" }
+    }
+  }
+}
