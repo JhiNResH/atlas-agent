@@ -1,5 +1,5 @@
 /**
- * ATLAS Multi-Conference Router — ACP Seller Handler ($0.80)
+ * Hermes Multi-Conference Router — ACP Seller Handler ($0.80)
  *
  * Full-year routing optimizer for crypto conference degens.
  * Compares: separate roundtrips vs multi-stop routing.
@@ -58,7 +58,7 @@ async function runMultiRouter(params: {
     })
     .join("\n");
 
-  const prompt = `You are ATLAS, crypto Travel Arbitrage Intelligence specializing in multi-conference routing.
+  const prompt = `You are Hermes, crypto Travel Arbitrage Intelligence specializing in multi-conference routing.
 
 HOME CITY: ${origin}
 YEAR: ${year || 2026}
@@ -70,7 +70,7 @@ ${userPrefs ? `Preferences: ${JSON.stringify(userPrefs)}` : ""}
 
 Analyze the optimal routing strategy. Compare separate roundtrips vs multi-stop itineraries.
 
-# 🗺️ ATLAS Multi-Conference Router: ${year || 2026}
+# 🗺️ Hermes Multi-Conference Router: ${year || 2026}
 
 ## 📊 Route Comparison
 
@@ -125,7 +125,7 @@ Based on your travel pattern, also consider:
 - [Suggest 1-2 related conferences geographically convenient to add]
 
 ---
-*Powered by ATLAS — Crypto Travel Arbitrage Intelligence*`;
+*Powered by Hermes — Crypto Travel Arbitrage Intelligence*`;
 
   try {
     const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
@@ -157,7 +157,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
           conferences: ["TOKEN2049 Singapore", "ETHDenver", "Consensus"],
           origin: "LAX",
         },
-        poweredBy: "ATLAS",
+        poweredBy: "Hermes",
       }),
     };
   }
@@ -173,8 +173,8 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   if (!report) {
     return {
       deliverable: JSON.stringify({
-        report: `# ATLAS Multi-Conference Router\n\nAI temporarily unavailable. Retry shortly.`,
-        poweredBy: "ATLAS",
+        report: `# Hermes Multi-Conference Router\n\nAI temporarily unavailable. Retry shortly.`,
+        poweredBy: "Hermes",
       }),
     };
   }
@@ -195,7 +195,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
         estimated_savings: savingsMatch ? `$${savingsMatch[1]}` : "See report",
         recommended_routing: conferences,
       },
-      poweredBy: "ATLAS — Crypto Travel Arbitrage Intelligence | Powered by Gemini Flash",
+      poweredBy: "Hermes — Crypto Travel Arbitrage Intelligence | Powered by Gemini Flash",
     }),
   };
 }

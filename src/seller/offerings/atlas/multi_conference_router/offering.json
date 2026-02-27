@@ -1,6 +1,6 @@
 {
   "name": "multi_conference_router",
-  "description": "Full-year crypto conference routing optimizer. Input a list of conferences you plan to attend + your home city. ATLAS calculates whether doing multi-stop trips saves money vs separate roundtrips, finds the optimal routing order, and gives per-conference booking windows. Best for crypto degens attending 3+ conferences per year. Supports all major conferences: TOKEN2049, ETHDenver, Consensus, Devcon, Solana Breakpoint, and more.",
+  "description": "Full-year crypto conference routing optimizer. Input a list of conferences you plan to attend + your home city. Hermes calculates whether doing multi-stop trips saves money vs separate roundtrips, finds the optimal routing order, and gives per-conference booking windows. Best for crypto degens attending 3+ conferences per year. Supports all major conferences: TOKEN2049, ETHDenver, Consensus, Devcon, Solana Breakpoint, and more.",
   "jobFee": 0.8,
   "jobFeeType": "fixed",
   "requiredFunds": false,

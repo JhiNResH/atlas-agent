@@ -1,5 +1,5 @@
 /**
- * ATLAS Flight Research — ACP Seller Handler
+ * Hermes Flight Research — ACP Seller Handler
  *
  * 7-step travel arbitrage analysis powered by Gemini Flash.
  */
@@ -33,7 +33,7 @@ export function requestPayment(requirements: Record<string, any>): string {
   const origin = requirements.origin || requirements.from || "your origin";
   const dest = requirements.destination || requirements.to || "your destination";
   const month = requirements.travel_month ? ` in ${requirements.travel_month}` : "";
-  return `Running ATLAS 7-step flight research for ${origin} → ${dest}${month}. Please proceed with payment.`;
+  return `Running Hermes 7-step flight research for ${origin} → ${dest}${month}. Please proceed with payment.`;
 }
 
 // ── Gemini Analysis ───────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ async function runAtlasAnalysis(
     .filter(Boolean)
     .join("\n");
 
-  const prompt = `You are ATLAS, a Travel Arbitrage Intelligence agent. Run a complete 7-step flight research report for:
+  const prompt = `You are Hermes, a Travel Arbitrage Intelligence agent. Run a complete 7-step flight research report for:
 
 Route: ${origin} → ${destination}
 ${context ? context + "\n" : ""}
@@ -64,7 +64,7 @@ Produce a structured markdown report with ALL 7 sections. Be specific, data-driv
 
 ---
 
-# ✈️ ATLAS Flight Research: ${origin} → ${destination}
+# ✈️ Hermes Flight Research: ${origin} → ${destination}
 
 ## Step 1: Flexible Route Optimizer
 - List 2-3 nearby departure airports if applicable (e.g. for LAX: BUR, LGB, ONT; for NYC: EWR, JFK, LGA)
@@ -114,14 +114,14 @@ Specific action plan:
 
 ---
 
-## 🏆 ATLAS Recommendation
+## 🏆 Hermes Recommendation
 **Best Option:** [1 sentence — specific airline + route]
 **Price Target:** [specific range]
 **Book By:** [when to book]
 **Next Action:** [one thing to do right now]
 
 ---
-*Powered by ATLAS — Travel Arbitrage Intelligence*
+*Powered by Hermes — Travel Arbitrage Intelligence*
 
 ---
 
@@ -129,7 +129,7 @@ Specific action plan:
 
 Flight research done. Ready to go deeper?
 
-**ATLAS Trip Planner** ($0.50) includes:
+**Hermes Trip Planner** ($0.50) includes:
 - ✅ Hotel picks (budget / mid-range / splurge) with real prices
 - ✅ Visa requirements for US passport holders
 - ✅ Day-by-day itinerary (${durationDays ?? 7} days)
@@ -219,7 +219,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
           travel_month: "May 2025",
           budget: "$800 roundtrip",
         },
-        poweredBy: "ATLAS — Travel Arbitrage Intelligence",
+        poweredBy: "Hermes — Travel Arbitrage Intelligence",
       }),
     };
   }
@@ -276,11 +276,11 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   if (!report) {
     return {
       deliverable: JSON.stringify({
-        report: `# ✈️ ATLAS: ${origin} → ${destination}\n\nAI analysis temporarily unavailable. Try:\n1. Google Flights\n2. Kayak price alerts\n3. Going.com for mistake fares`,
+        report: `# ✈️ Hermes: ${origin} → ${destination}\n\nAI analysis temporarily unavailable. Try:\n1. Google Flights\n2. Kayak price alerts\n3. Going.com for mistake fares`,
         topPick: "Check Google Flights",
         priceRange: "Varies",
         bestBookingWindow: "4-8 weeks ahead",
-        poweredBy: "ATLAS — Travel Arbitrage Intelligence",
+        poweredBy: "Hermes — Travel Arbitrage Intelligence",
       }),
     };
   }
@@ -291,7 +291,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       report,
       ...summary,
       route: { origin: origin.trim(), destination: destination.trim() },
-      poweredBy: "ATLAS — Travel Arbitrage Intelligence | Powered by Gemini Flash",
+      poweredBy: "Hermes — Travel Arbitrage Intelligence | Powered by Gemini Flash",
     }),
   };
 }

@@ -1,7 +1,7 @@
 {
   "name": "flight_research",
-  "description": "Deep flight research for any route. Analyzes cheapest airlines, optimal booking windows, hidden fare strategies (split ticket, hidden-city), points/miles redemption value, and price monitoring setup. Returns a complete 7-step research report. Powered by ATLAS — Travel Arbitrage Intelligence.",
-  "jobFee": 0.20,
+  "description": "Deep flight research for any route. Analyzes cheapest airlines, optimal booking windows, hidden fare strategies (split ticket, hidden-city), points/miles redemption value, and price monitoring setup. Returns a complete 7-step research report. Powered by Hermes — Travel Arbitrage Intelligence.",
+  "jobFee": 0.2,
   "jobFeeType": "fixed",
   "requiredFunds": false,
   "requirement": {
@@ -33,7 +33,10 @@
   "deliverable": {
     "type": "object",
     "properties": {
-      "report": { "type": "string", "description": "Full 7-step flight research report in markdown" },
+      "report": {
+        "type": "string",
+        "description": "Full 7-step flight research report in markdown"
+      },
       "topPick": { "type": "string", "description": "Best option summary" },
       "priceRange": { "type": "string", "description": "Estimated price range" },
       "bestBookingWindow": { "type": "string", "description": "When to book" },

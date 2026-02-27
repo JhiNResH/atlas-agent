@@ -1,6 +1,6 @@
 {
   "name": "conference_travel",
-  "description": "Crypto conference flight optimizer. Tell ATLAS which conference you're attending and your departure city — it handles everything else: dates, airports, optimal booking window, cheapest airlines, points/miles value, and arrival timing for side events. Supports TOKEN2049, ETHDenver, Consensus, Devcon, Solana Breakpoint, Permissionless, ETHGlobal, and more.",
+  "description": "Crypto conference flight optimizer. Tell Hermes which conference you're attending and your departure city — it handles everything else: dates, airports, optimal booking window, cheapest airlines, points/miles value, and arrival timing for side events. Supports TOKEN2049, ETHDenver, Consensus, Devcon, Solana Breakpoint, Permissionless, ETHGlobal, and more.",
   "jobFee": 0.25,
   "jobFeeType": "fixed",
   "requiredFunds": false,

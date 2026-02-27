@@ -1,5 +1,5 @@
 /**
- * ATLAS Conference Trip — ACP Seller Handler ($0.60)
+ * Hermes Conference Trip — ACP Seller Handler ($0.60)
  *
  * Full conference trip: flights + hotels near venue + side events + budget
  */
@@ -56,7 +56,7 @@ CONFERENCE (verified):
 `
     : `CONFERENCE: ${conference} — use your knowledge for details`;
 
-  const prompt = `You are ATLAS, crypto Travel Arbitrage Intelligence.
+  const prompt = `You are Hermes, crypto Travel Arbitrage Intelligence.
 
 Route: ${origin} → ${confData?.city || conference}
 ${confContext}
@@ -66,7 +66,7 @@ ${userPrefs ? `Preferences: ${JSON.stringify(userPrefs)}` : ""}
 
 Produce a complete conference trip plan. Be specific — real hotel names, real neighborhoods, real airlines.
 
-# 🌍 ATLAS Conference Trip: ${confData?.name || conference}
+# 🌍 Hermes Conference Trip: ${confData?.name || conference}
 
 ## ✈️ Flights from ${origin}
 - **Best option:** [airline + price + dates]
@@ -117,7 +117,7 @@ Produce a complete conference trip plan. Be specific — real hotel names, real 
 ---
 
 ## 🗺️ Going to Multiple Conferences This Year?
-ATLAS can optimize your full-year routing and save $300-800 on multi-conference trips.
+Hermes can optimize your full-year routing and save $300-800 on multi-conference trips.
 
 \`\`\`json
 {
@@ -131,7 +131,7 @@ ATLAS can optimize your full-year routing and save $300-800 on multi-conference 
 Provider: \`0xf4b48521960C7e78fCf89859c42d912cdcd0FC06\`
 
 ---
-*Powered by ATLAS — Crypto Travel Arbitrage Intelligence*`;
+*Powered by Hermes — Crypto Travel Arbitrage Intelligence*`;
 
   try {
     const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
@@ -168,8 +168,8 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   if (!report) {
     return {
       deliverable: JSON.stringify({
-        report: `# ATLAS Conference Trip: ${conference}\n\nAI temporarily unavailable. Retry shortly.`,
-        poweredBy: "ATLAS",
+        report: `# Hermes Conference Trip: ${conference}\n\nAI temporarily unavailable. Retry shortly.`,
+        poweredBy: "Hermes",
       }),
     };
   }
@@ -197,7 +197,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
         },
         hint: "Add more conferences to optimize full-year routing and save $300-800",
       },
-      poweredBy: "ATLAS — Crypto Travel Arbitrage Intelligence | Powered by Gemini Flash",
+      poweredBy: "Hermes — Crypto Travel Arbitrage Intelligence | Powered by Gemini Flash",
     }),
   };
 }

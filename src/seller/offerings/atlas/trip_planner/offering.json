@@ -1,7 +1,7 @@
 {
   "name": "trip_planner",
-  "description": "Full trip orchestration: one sentence in, complete travel plan out. Takes a destination, dates, and budget — returns flight recommendations, hotel suggestions, visa requirements, and a day-by-day itinerary. Best for agents building travel automation pipelines. Powered by ATLAS — Travel Arbitrage Intelligence.",
-  "jobFee": 0.50,
+  "description": "Full trip orchestration: one sentence in, complete travel plan out. Takes a destination, dates, and budget — returns flight recommendations, hotel suggestions, visa requirements, and a day-by-day itinerary. Best for agents building travel automation pipelines. Powered by Hermes — Travel Arbitrage Intelligence.",
+  "jobFee": 0.5,
   "jobFeeType": "fixed",
   "requiredFunds": false,
   "requirement": {

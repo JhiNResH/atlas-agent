@@ -1,9 +1,9 @@
 /**
- * ATLAS Conference Travel — ACP Seller Handler ($0.25)
+ * Hermes Conference Travel — ACP Seller Handler ($0.25)
  *
  * Crypto conference flight optimizer.
  * User provides: conference name + origin city
- * ATLAS handles: dates, airports, booking strategy, points/miles
+ * Hermes handles: dates, airports, booking strategy, points/miles
  */
 
 import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeringTypes.js";
@@ -30,7 +30,7 @@ export function validateRequirements(requirements: Record<string, any>): Validat
 export function requestPayment(requirements: Record<string, any>): string {
   const conf = requirements.conference || requirements.event || "the conference";
   const origin = requirements.origin || requirements.from || "your city";
-  return `Finding best flights from ${origin} to ${conf}. ATLAS will handle dates, airports, and booking strategy. Please proceed with payment.`;
+  return `Finding best flights from ${origin} to ${conf}. Hermes will handle dates, airports, and booking strategy. Please proceed with payment.`;
 }
 
 async function runConferenceFlight(params: {
@@ -70,14 +70,14 @@ Note: If you don't have verified dates, indicate uncertainty.
   const budgetContext = budget ? `\nBudget: ${budget}` : "";
   const livePriceContext = livePrice ? `\n\n${livePrice}` : "";
 
-  const prompt = `You are ATLAS, a crypto-native Travel Arbitrage Intelligence agent.
+  const prompt = `You are Hermes, a crypto-native Travel Arbitrage Intelligence agent.
 
 ROUTE: ${origin} → ${confData?.city || conference}
 ${confContext}${budgetContext}${prefsContext}${livePriceContext}
 
 This traveler is going to a CRYPTO CONFERENCE. Give them conference-specific flight advice, not just generic travel tips.
 
-# ✈️ ATLAS: Getting to ${confData?.name || conference}
+# ✈️ Hermes: Getting to ${confData?.name || conference}
 
 ## 📅 When to Fly
 - **Arrive:** [specific date with reason — cover side events]
@@ -104,7 +104,7 @@ ${userPrefs?.points ? `- **Your ${userPrefs.points}:** [specific redemption advi
 - [Visa reminder if needed]
 - [One thing most attendees miss]
 
-## 🏆 ATLAS Verdict
+## 🏆 Hermes Verdict
 **Best Option:** [1 sentence]
 **Price Target:** [range]
 **Book By:** [date]
@@ -128,7 +128,7 @@ Hotels near ${confData?.venue || "the venue"}, side events schedule, budget brea
 Provider: \`0xf4b48521960C7e78fCf89859c42d912cdcd0FC06\`
 
 ---
-*Powered by ATLAS — Crypto Travel Arbitrage Intelligence*`;
+*Powered by Hermes — Crypto Travel Arbitrage Intelligence*`;
 
   try {
     const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
@@ -161,7 +161,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
         error: "Missing conference or origin",
         available_conferences: listConferencesSummary(),
         usage: '{ conference: "TOKEN2049 Singapore", origin: "LAX" }',
-        poweredBy: "ATLAS — Crypto Travel Arbitrage Intelligence",
+        poweredBy: "Hermes — Crypto Travel Arbitrage Intelligence",
       }),
     };
   }
@@ -225,9 +225,9 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   if (!report) {
     return {
       deliverable: JSON.stringify({
-        report: `# ATLAS: ${conference} from ${origin}\n\nAI analysis temporarily unavailable. Retry shortly.`,
+        report: `# Hermes: ${conference} from ${origin}\n\nAI analysis temporarily unavailable. Retry shortly.`,
         structured: { conference_name: confData?.name ?? conference },
-        poweredBy: "ATLAS",
+        poweredBy: "Hermes",
       }),
     };
   }
@@ -264,7 +264,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       report,
       structured,
       next_step,
-      poweredBy: "ATLAS — Crypto Travel Arbitrage Intelligence | Powered by Gemini Flash",
+      poweredBy: "Hermes — Crypto Travel Arbitrage Intelligence | Powered by Gemini Flash",
     }),
   };
 }

@@ -1,5 +1,5 @@
 /**
- * ATLAS Trip Planner — ACP Seller Handler
+ * Hermes Trip Planner — ACP Seller Handler
  *
  * Full trip orchestration ($0.50):
  * flights + hotels + visa + day-by-day itinerary
@@ -46,7 +46,8 @@ async function runTripOrchestration(params: {
 }): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
-  const { origin, destination, durationDays, travelMonth, budgetTotal, travelers, tripStyle } = params;
+  const { origin, destination, durationDays, travelMonth, budgetTotal, travelers, tripStyle } =
+    params;
   const days = durationDays ?? 7;
 
   const contextLines = [
@@ -59,7 +60,7 @@ async function runTripOrchestration(params: {
     .filter(Boolean)
     .join("\n");
 
-  const prompt = `You are ATLAS, a Travel Arbitrage Intelligence agent. Create a comprehensive trip plan.
+  const prompt = `You are Hermes, a Travel Arbitrage Intelligence agent. Create a comprehensive trip plan.
 
 Route: ${origin} → ${destination}
 ${contextLines}
@@ -68,7 +69,7 @@ Produce structured markdown with all sections. Be specific: real hotel names, re
 
 ---
 
-# 🌍 ATLAS Trip Plan: ${origin} → ${destination}
+# 🌍 Hermes Trip Plan: ${origin} → ${destination}
 
 ## ✈️ Flights
 - **Best airline(s)**: [specific carriers + estimated roundtrip price]
@@ -117,7 +118,7 @@ Day-by-day (mix of free and paid activities):
 3. [Third action]
 
 ---
-*Powered by ATLAS — Travel Arbitrage Intelligence*`;
+*Powered by Hermes — Travel Arbitrage Intelligence*`;
 
   try {
     const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
@@ -146,10 +147,9 @@ function extractMeta(report: string) {
       report.match(/\*\*Best booking platform\*\*:\s*([^\n]+)/)?.[1]?.trim() ?? "See report",
     visaRequired:
       (report.match(/\*\*Visa required\*\*:\s*(Yes|No)/i)?.[1]?.toLowerCase() ?? "no") === "yes",
-    estimatedTotalCost:
-      report.match(/\*\*TOTAL ESTIMATED\*\*[^$]*\$([0-9,]+)/)?.[1]
-        ? `$${report.match(/\*\*TOTAL ESTIMATED\*\*[^$]*\$([0-9,]+)/)?.[1]}`
-        : "See budget breakdown",
+    estimatedTotalCost: report.match(/\*\*TOTAL ESTIMATED\*\*[^$]*\$([0-9,]+)/)?.[1]
+      ? `$${report.match(/\*\*TOTAL ESTIMATED\*\*[^$]*\$([0-9,]+)/)?.[1]}`
+      : "See budget breakdown",
   };
 }
 
@@ -168,8 +168,9 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       requirements.message || requirements.promo_message || Object.values(requirements).join(" ");
     if (raw) {
       const match =
-        raw.match(/(?:from\s+)?([A-Za-z\s]+?)\s+(?:to|→|->)\s+([A-Za-z\s]+?)(?:\s+for|\s+in|\s*$)/i) ||
-        raw.match(/([A-Z]{3})\s+(?:to|→|->)\s+([A-Z]{3})/i);
+        raw.match(
+          /(?:from\s+)?([A-Za-z\s]+?)\s+(?:to|→|->)\s+([A-Za-z\s]+?)(?:\s+for|\s+in|\s*$)/i
+        ) || raw.match(/([A-Z]{3})\s+(?:to|→|->)\s+([A-Z]{3})/i);
       if (match) {
         origin = origin || match[1]?.trim();
         destination = destination || match[2]?.trim();
@@ -182,7 +183,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       deliverable: JSON.stringify({
         error: "Missing route",
         usage: '{ origin: "LAX", destination: "Tokyo", duration_days: 7, budget_total: "$3000" }',
-        poweredBy: "ATLAS — Travel Arbitrage Intelligence",
+        poweredBy: "Hermes — Travel Arbitrage Intelligence",
       }),
     };
   }
@@ -200,12 +201,12 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   if (!report) {
     return {
       deliverable: JSON.stringify({
-        report: `# ATLAS Trip Plan: ${origin} → ${destination}\n\nAI analysis temporarily unavailable. Retry shortly.\n\n**Quick start:**\n1. Google Flights: ${origin} → ${destination}\n2. Booking.com for hotels\n3. Check visa: cibt.com`,
+        report: `# Hermes Trip Plan: ${origin} → ${destination}\n\nAI analysis temporarily unavailable. Retry shortly.\n\n**Quick start:**\n1. Google Flights: ${origin} → ${destination}\n2. Booking.com for hotels\n3. Check visa: cibt.com`,
         flightSummary: "Check Google Flights",
         hotelSummary: "Check Booking.com",
         visaRequired: null,
         estimatedTotalCost: "Varies",
-        poweredBy: "ATLAS — Travel Arbitrage Intelligence",
+        poweredBy: "Hermes — Travel Arbitrage Intelligence",
       }),
     };
   }
@@ -216,7 +217,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       report,
       ...meta,
       route: { origin: origin.trim(), destination: destination.trim() },
-      poweredBy: "ATLAS — Travel Arbitrage Intelligence | Powered by Gemini Flash",
+      poweredBy: "Hermes — Travel Arbitrage Intelligence | Powered by Gemini Flash",
     }),
   };
 }

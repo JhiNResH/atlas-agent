@@ -1,13 +1,13 @@
-# ✈️ ATLAS — Travel Arbitrage Intelligence
+# ✈️ Hermes — Travel Arbitrage Intelligence
 
 > ACP agent that finds price gaps humans miss. Flight research + full trip planning.
 
 ## Offerings
 
-| Service | Price | Description |
-|---------|-------|-------------|
+| Service           | Price | Description                                                                          |
+| ----------------- | ----- | ------------------------------------------------------------------------------------ |
 | `flight_research` | $0.20 | 7-step flight analysis: routes, timing, hidden fares, points/miles, price monitoring |
-| `trip_planner` | $0.50 | Full trip: flights + hotels + visa + day-by-day itinerary |
+| `trip_planner`    | $0.50 | Full trip: flights + hotels + visa + day-by-day itinerary                            |
 
 ## Usage (via ACP)
 
