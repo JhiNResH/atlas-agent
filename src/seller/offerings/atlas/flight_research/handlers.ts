@@ -5,6 +5,7 @@
  */
 
 import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeringTypes.js";
+import { searchFlights, formatOffersForPrompt } from "../../../../lib/amadeus.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_URL =
@@ -41,7 +42,8 @@ async function runAtlasAnalysis(
   destination: string,
   travelMonth?: string,
   budget?: string,
-  preferences?: string
+  preferences?: string,
+  livePrice?: string
 ): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
@@ -49,6 +51,7 @@ async function runAtlasAnalysis(
     travelMonth ? `Travel time: ${travelMonth}` : "",
     budget ? `Budget: ${budget}` : "",
     preferences ? `Preferences: ${preferences}` : "",
+    livePrice ? livePrice : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -221,12 +224,53 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     };
   }
 
+  // Fetch live prices from Amadeus before Gemini analysis
+  let livePrice: string | undefined;
+  try {
+    const departureDate = (() => {
+      if (travelMonth) {
+        const monthMap: Record<string, number> = {
+          jan: 1,
+          feb: 2,
+          mar: 3,
+          apr: 4,
+          may: 5,
+          jun: 6,
+          jul: 7,
+          aug: 8,
+          sep: 9,
+          oct: 10,
+          nov: 11,
+          dec: 12,
+        };
+        const found = Object.entries(monthMap).find(([k]) => travelMonth.toLowerCase().includes(k));
+        if (found) {
+          const yr = new Date().getFullYear() + (found[1] < new Date().getMonth() + 2 ? 1 : 0);
+          return `${yr}-${String(found[1]).padStart(2, "0")}-15`;
+        }
+      }
+      const d = new Date();
+      d.setDate(d.getDate() + 56);
+      return d.toISOString().split("T")[0];
+    })();
+    const result = await searchFlights({
+      origin: origin.trim().toUpperCase(),
+      destination: destination.trim().toUpperCase(),
+      departureDate,
+      max: 5,
+    });
+    livePrice = formatOffersForPrompt(result);
+  } catch {
+    // Silent fallback — Gemini uses knowledge-based estimates
+  }
+
   const report = await runAtlasAnalysis(
     origin.trim(),
     destination.trim(),
     travelMonth,
     budget,
-    preferences
+    preferences,
+    livePrice
   );
 
   if (!report) {

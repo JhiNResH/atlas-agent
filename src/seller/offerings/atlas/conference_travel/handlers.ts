@@ -8,6 +8,7 @@
 
 import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeringTypes.js";
 import { findConference, listConferencesSummary } from "../../../../lib/conferences.js";
+import { searchFlights, formatOffersForPrompt } from "../../../../lib/amadeus.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_URL =
@@ -38,10 +39,11 @@ async function runConferenceFlight(params: {
   extraDays?: number;
   budget?: string;
   userPrefs?: Record<string, any>;
+  livePrice?: string;
 }): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
-  const { conference, origin, extraDays, budget, userPrefs } = params;
+  const { conference, origin, extraDays, budget, userPrefs, livePrice } = params;
   const confData = findConference(conference);
 
   const confContext = confData
@@ -66,11 +68,12 @@ Note: If you don't have verified dates, indicate uncertainty.
 
   const prefsContext = userPrefs ? `\nUSER PREFERENCES: ${JSON.stringify(userPrefs)}` : "";
   const budgetContext = budget ? `\nBudget: ${budget}` : "";
+  const livePriceContext = livePrice ? `\n\n${livePrice}` : "";
 
   const prompt = `You are ATLAS, a crypto-native Travel Arbitrage Intelligence agent.
 
 ROUTE: ${origin} → ${confData?.city || conference}
-${confContext}${budgetContext}${prefsContext}
+${confContext}${budgetContext}${prefsContext}${livePriceContext}
 
 This traveler is going to a CRYPTO CONFERENCE. Give them conference-specific flight advice, not just generic travel tips.
 
@@ -164,7 +167,60 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   }
 
   const confData = findConference(conference);
-  const report = await runConferenceFlight({ conference, origin, extraDays, budget, userPrefs });
+
+  // Fetch live prices if we know the airport
+  let livePrice: string | undefined;
+  if (confData?.airport) {
+    try {
+      // Use recommended arrival date or 8 weeks out
+      const departureDate = (() => {
+        const arrStr = confData.recommended_arrival;
+        // Try to parse "Apr 28" style dates
+        const months: Record<string, string> = {
+          Jan: "01",
+          Feb: "02",
+          Mar: "03",
+          Apr: "04",
+          May: "05",
+          Jun: "06",
+          Jul: "07",
+          Aug: "08",
+          Sep: "09",
+          Oct: "10",
+          Nov: "11",
+          Dec: "12",
+        };
+        const match = arrStr.match(/([A-Za-z]+)\s+(\d+)/);
+        if (match) {
+          const mon = months[match[1]] || "06";
+          const yr = new Date().getFullYear() + (parseInt(mon) < new Date().getMonth() + 1 ? 1 : 0);
+          return `${yr}-${mon}-${String(match[2]).padStart(2, "0")}`;
+        }
+        const d = new Date();
+        d.setDate(d.getDate() + 56);
+        return d.toISOString().split("T")[0];
+      })();
+
+      const result = await searchFlights({
+        origin: origin.trim().toUpperCase(),
+        destination: confData.airport,
+        departureDate,
+        max: 5,
+      });
+      livePrice = formatOffersForPrompt(result);
+    } catch {
+      // Silent fallback
+    }
+  }
+
+  const report = await runConferenceFlight({
+    conference,
+    origin,
+    extraDays,
+    budget,
+    userPrefs,
+    livePrice,
+  });
 
   if (!report) {
     return {
