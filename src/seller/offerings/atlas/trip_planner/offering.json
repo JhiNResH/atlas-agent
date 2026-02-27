@@ -1,0 +1,52 @@
+{
+  "name": "trip_planner",
+  "description": "Full trip orchestration: one sentence in, complete travel plan out. Takes a destination, dates, and budget — returns flight recommendations, hotel suggestions, visa requirements, and a day-by-day itinerary. Best for agents building travel automation pipelines. Powered by ATLAS — Travel Arbitrage Intelligence.",
+  "jobFee": 0.50,
+  "jobFeeType": "fixed",
+  "requiredFunds": false,
+  "requirement": {
+    "type": "object",
+    "properties": {
+      "origin": {
+        "type": "string",
+        "description": "Departure city or airport (e.g. 'LAX', 'New York')"
+      },
+      "destination": {
+        "type": "string",
+        "description": "Destination city or country (e.g. 'Tokyo', 'Japan', 'Paris')"
+      },
+      "duration_days": {
+        "type": "number",
+        "description": "Trip duration in days (e.g. 7)"
+      },
+      "travel_month": {
+        "type": "string",
+        "description": "When you want to travel (e.g. 'May 2025', 'summer', 'ASAP')"
+      },
+      "budget_total": {
+        "type": "string",
+        "description": "Total trip budget (e.g. '$3000', '$2500 flights+hotel')"
+      },
+      "travelers": {
+        "type": "number",
+        "description": "Number of travelers (default: 1)"
+      },
+      "trip_style": {
+        "type": "string",
+        "description": "Optional: budget/mid-range/luxury, backpacker/business/family"
+      }
+    },
+    "required": ["origin", "destination"]
+  },
+  "deliverable": {
+    "type": "object",
+    "properties": {
+      "report": { "type": "string", "description": "Full trip plan in markdown" },
+      "flightSummary": { "type": "string" },
+      "hotelSummary": { "type": "string" },
+      "visaRequired": { "type": "boolean" },
+      "estimatedTotalCost": { "type": "string" },
+      "poweredBy": { "type": "string" }
+    }
+  }
+}

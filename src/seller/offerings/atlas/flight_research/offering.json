@@ -1,0 +1,43 @@
+{
+  "name": "flight_research",
+  "description": "Deep flight research for any route. Analyzes cheapest airlines, optimal booking windows, hidden fare strategies (split ticket, hidden-city), points/miles redemption value, and price monitoring setup. Returns a complete 7-step research report. Powered by ATLAS — Travel Arbitrage Intelligence.",
+  "jobFee": 0.20,
+  "jobFeeType": "fixed",
+  "requiredFunds": false,
+  "requirement": {
+    "type": "object",
+    "properties": {
+      "origin": {
+        "type": "string",
+        "description": "Departure city or airport code (e.g. 'LAX', 'Los Angeles', 'SFO')"
+      },
+      "destination": {
+        "type": "string",
+        "description": "Destination city or airport code (e.g. 'NRT', 'Tokyo', 'Beijing')"
+      },
+      "travel_month": {
+        "type": "string",
+        "description": "Optional: preferred travel month or timeframe (e.g. 'May 2025', 'summer', 'ASAP')"
+      },
+      "budget": {
+        "type": "string",
+        "description": "Optional: budget constraint (e.g. '$500', 'under $1000 roundtrip')"
+      },
+      "preferences": {
+        "type": "string",
+        "description": "Optional: preferences like 'no long layovers', 'direct only', 'open to points'"
+      }
+    },
+    "required": ["origin", "destination"]
+  },
+  "deliverable": {
+    "type": "object",
+    "properties": {
+      "report": { "type": "string", "description": "Full 7-step flight research report in markdown" },
+      "topPick": { "type": "string", "description": "Best option summary" },
+      "priceRange": { "type": "string", "description": "Estimated price range" },
+      "bestBookingWindow": { "type": "string", "description": "When to book" },
+      "poweredBy": { "type": "string" }
+    }
+  }
+}

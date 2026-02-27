@@ -1,0 +1,212 @@
+/**
+ * ATLAS Flight Research — ACP Seller Handler
+ *
+ * 7-step travel arbitrage analysis powered by Gemini Flash.
+ */
+
+import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeringTypes.js";
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+// ── Validation ────────────────────────────────────────────────────────────────
+export function validateRequirements(requirements: Record<string, any>): ValidationResult {
+  const origin = requirements.origin || requirements.from || requirements.departure;
+  const dest = requirements.destination || requirements.to || requirements.arrival;
+  if (!origin || !dest) {
+    const raw = requirements.message || Object.values(requirements).join(" ");
+    if (!raw || raw.trim().length < 4) {
+      return {
+        valid: false,
+        reason:
+          "Please provide origin and destination. E.g. { origin: 'LAX', destination: 'Tokyo' }",
+      };
+    }
+  }
+  return { valid: true };
+}
+
+// ── Payment message ───────────────────────────────────────────────────────────
+export function requestPayment(requirements: Record<string, any>): string {
+  const origin = requirements.origin || requirements.from || "your origin";
+  const dest = requirements.destination || requirements.to || "your destination";
+  const month = requirements.travel_month ? ` in ${requirements.travel_month}` : "";
+  return `Running ATLAS 7-step flight research for ${origin} → ${dest}${month}. Please proceed with payment.`;
+}
+
+// ── Gemini Analysis ───────────────────────────────────────────────────────────
+async function runAtlasAnalysis(
+  origin: string,
+  destination: string,
+  travelMonth?: string,
+  budget?: string,
+  preferences?: string
+): Promise<string | null> {
+  if (!GEMINI_API_KEY) return null;
+
+  const context = [
+    travelMonth ? `Travel time: ${travelMonth}` : "",
+    budget ? `Budget: ${budget}` : "",
+    preferences ? `Preferences: ${preferences}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const prompt = `You are ATLAS, a Travel Arbitrage Intelligence agent. Run a complete 7-step flight research report for:
+
+Route: ${origin} → ${destination}
+${context ? context + "\n" : ""}
+Produce a structured markdown report with ALL 7 sections. Be specific, data-driven, and actionable. Use real airline names, real price estimates, real booking platforms.
+
+---
+
+# ✈️ ATLAS Flight Research: ${origin} → ${destination}
+
+## Step 1: Flexible Route Optimizer
+- List 2-3 nearby departure airports if applicable (e.g. for LAX: BUR, LGB, ONT; for NYC: EWR, JFK, LGA)
+- List alternate destination airports if applicable
+- Name the cheapest airlines on this route (LCC + legacy)
+- Mention creative layover options that undercut direct pricing
+- Give estimated price range for economy roundtrip
+
+## Step 2: Timing Advantage Scanner
+- Best month(s) to travel (cheapest vs peak)
+- Best day of week to fly
+- Optimal advance booking window (weeks in advance)
+- Seasonal patterns and holidays to avoid
+
+## Step 3: Hidden Fare Opportunities
+For each strategy, explain clearly with risk level [LOW/MEDIUM/HIGH]:
+- **Split ticketing** — what it is, potential savings, risks
+- **Hidden-city ticketing** — what it is, potential savings, risks
+- **Multi-city / open-jaw** — if applicable to this route
+- **Positioning flights** — if a cheaper nearby hub exists
+
+## Step 4: Airline Direct Deals Finder
+- All carriers operating this route
+- Direct booking discount estimate (typically 5-10% vs OTA)
+- Any lesser-known carriers on this route
+- Airline credit card companion fare opportunities
+
+## Step 5: Points & Miles Optimizer
+- Best frequent flyer programs for this route
+- Estimated miles needed (economy and business class)
+- Best credit card transfer chains (Chase UR, Amex MR, Citi TYP)
+- Verdict: use points or pay cash? Why?
+
+## Step 6: Price Monitoring Strategy
+Specific action plan:
+1. Set up Google Flights price alert (exact steps)
+2. Recommended alert tools (Hopper, Kayak, Going.com)
+3. Booking trigger: book when price drops below $[X]
+4. How far out to set alerts
+
+## Step 7: Final Booking Audit Checklist
+- [ ] Baggage fees checked (especially ULCCs)
+- [ ] Seat selection fees noted
+- [ ] Layover time is safe (minimum times)
+- [ ] Cancellation/change policy reviewed
+- [ ] OTA vs direct price compared
+
+---
+
+## 🏆 ATLAS Recommendation
+**Best Option:** [1 sentence — specific airline + route]
+**Price Target:** [specific range]
+**Book By:** [when to book]
+**Next Action:** [one thing to do right now]
+
+---
+*Powered by ATLAS — Travel Arbitrage Intelligence*`;
+
+  try {
+    const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.4 },
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Parse summary from report ─────────────────────────────────────────────────
+function extractSummary(report: string) {
+  return {
+    topPick: report.match(/\*\*Best Option:\*\*\s*(.+)/)?.[1]?.trim() ?? "See full report",
+    priceRange: report.match(/\*\*Price Target:\*\*\s*(.+)/)?.[1]?.trim() ?? "See Step 1",
+    bestBookingWindow: report.match(/\*\*Book By:\*\*\s*(.+)/)?.[1]?.trim() ?? "See Step 2",
+  };
+}
+
+// ── Execution ─────────────────────────────────────────────────────────────────
+export async function executeJob(requirements: Record<string, any>): Promise<ExecuteJobResult> {
+  let origin =
+    requirements.origin || requirements.from || requirements.departure || requirements.origin_airport;
+  let destination =
+    requirements.destination || requirements.to || requirements.dest || requirements.arrival;
+
+  const travelMonth = requirements.travel_month || requirements.month;
+  const budget = requirements.budget || requirements.max_price;
+  const preferences = requirements.preferences || requirements.notes;
+
+  // Raw message fallback
+  if (!origin || !destination) {
+    const raw =
+      requirements.message || requirements.promo_message || Object.values(requirements).join(" ");
+    if (raw) {
+      const match =
+        raw.match(/(?:from\s+)?([A-Za-z\s]+?)\s+(?:to|→|->)\s+([A-Za-z\s]+?)(?:\s+in|\s+during|\s*$)/i) ||
+        raw.match(/([A-Z]{3})\s+(?:to|→|->)\s+([A-Z]{3})/i);
+      if (match) {
+        origin = origin || match[1]?.trim();
+        destination = destination || match[2]?.trim();
+      }
+    }
+  }
+
+  if (!origin || !destination) {
+    return {
+      deliverable: JSON.stringify({
+        error: "Missing route information",
+        usage:
+          'Provide { origin: "LAX", destination: "Tokyo" } or send "flights from LAX to Tokyo in May"',
+        example: { origin: "LAX", destination: "NRT", travel_month: "May 2025", budget: "$800 roundtrip" },
+        poweredBy: "ATLAS — Travel Arbitrage Intelligence",
+      }),
+    };
+  }
+
+  const report = await runAtlasAnalysis(origin.trim(), destination.trim(), travelMonth, budget, preferences);
+
+  if (!report) {
+    return {
+      deliverable: JSON.stringify({
+        report: `# ✈️ ATLAS: ${origin} → ${destination}\n\nAI analysis temporarily unavailable. Try:\n1. Google Flights\n2. Kayak price alerts\n3. Going.com for mistake fares`,
+        topPick: "Check Google Flights",
+        priceRange: "Varies",
+        bestBookingWindow: "4-8 weeks ahead",
+        poweredBy: "ATLAS — Travel Arbitrage Intelligence",
+      }),
+    };
+  }
+
+  const summary = extractSummary(report);
+  return {
+    deliverable: JSON.stringify({
+      report,
+      ...summary,
+      route: { origin: origin.trim(), destination: destination.trim() },
+      poweredBy: "ATLAS — Travel Arbitrage Intelligence | Powered by Gemini Flash",
+    }),
+  };
+}

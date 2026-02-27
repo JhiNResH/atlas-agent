@@ -1,0 +1,21 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "Maiat",
+  "description": "Trustless trust layer for AI agent commerce. Provides trust scores, deep insight reports, on-chain analytics, and pre-payment trust gating for x402 agent-to-agent payments.",
+  "image": "https://acpcdn-prod.s3.ap-southeast-1.amazonaws.com/0xaf1ae6f344c60c7fe56cb53d1809f2c0b997a2b9/63f865e4-be04-4918-a9df-7be747ff0dce.png",
+  "services": [
+    {
+      "name": "ACP",
+      "type": "acp",
+      "endpoint": "https://acpx.virtuals.io",
+      "version": "1.0.0"
+    }
+  ],
+  "registrations": [
+    {
+      "agentRegistry": "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+      "agentId": "20854"
+    }
+  ],
+  "supportedTrust": ["reputation"]
+}
