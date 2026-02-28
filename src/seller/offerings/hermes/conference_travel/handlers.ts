@@ -13,6 +13,10 @@ import {
   getConferenceWarning,
 } from "../../../../lib/conferences.js";
 import { searchFlights, formatOffersForPrompt } from "../../../../lib/amadeus.js";
+import {
+  searchConferenceInfo,
+  formatLiveConferenceContext,
+} from "../../../../lib/conferenceSearch.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_URL =
@@ -44,14 +48,21 @@ async function runConferenceFlight(params: {
   budget?: string;
   userPrefs?: Record<string, any>;
   livePrice?: string;
+  liveInfo?: Awaited<ReturnType<typeof searchConferenceInfo>>;
 }): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
   const { conference, origin, extraDays, budget, userPrefs, livePrice } = params;
   const confData = findConference(conference);
+  const needsWebSearch = !confData || confData.dates.includes("TBC");
 
-  const confContext = confData
-    ? `
+  // Use passed-in liveInfo (fetched in executeJob before calling this)
+  const liveInfo = params.liveInfo;
+
+  const confContext = liveInfo
+    ? `\n${formatLiveConferenceContext(liveInfo)}\n`
+    : confData
+      ? `
 CONFERENCE DATA (verified):
 - Name: ${confData.name}
 - Dates: ${confData.dates}
@@ -65,7 +76,7 @@ CONFERENCE DATA (verified):
 - Notable Side Events: ${confData.notable_side_events.join(", ")}
 - Visa (US Passport): ${confData.visa_notes}
 `
-    : `
+      : `
 CONFERENCE: ${conference} (not in DB — use your knowledge for dates/venue)
 Note: If you don't have verified dates, indicate uncertainty.
 `;
@@ -76,7 +87,7 @@ Note: If you don't have verified dates, indicate uncertainty.
 
   const prompt = `You are Hermes, a crypto-native Travel Arbitrage Intelligence agent.
 
-ROUTE: ${origin} → ${confData?.city || conference}
+ROUTE: ${origin} → ${liveInfo?.city || confData?.city || conference}
 ${confContext}${budgetContext}${prefsContext}${livePriceContext}
 
 This traveler is going to a CRYPTO CONFERENCE. Give them conference-specific flight advice, not just generic travel tips.
@@ -173,13 +184,28 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   const confData = findConference(conference);
   const conferenceWarning = confData ? getConferenceWarning(confData) : null;
 
+  // Web search if conference not in DB or has TBC dates
+  let liveInfo = null;
+  if (!confData || confData.dates.includes("TBC")) {
+    console.log(`[hermes] Conference "${conference}" not in DB or TBC — searching web…`);
+    liveInfo = await searchConferenceInfo(conference);
+    if (liveInfo) {
+      console.log(
+        `[hermes] Web search found: ${liveInfo.name} @ ${liveInfo.city}, ${liveInfo.dates}`
+      );
+    }
+  }
+
+  // Effective airport: liveInfo > confData
+  const effectiveAirport = liveInfo?.airport || confData?.airport;
+
   // Fetch live prices if we know the airport
   let livePrice: string | undefined;
-  if (confData?.airport) {
+  if (effectiveAirport) {
     try {
       // Use recommended arrival date or 8 weeks out
       const departureDate = (() => {
-        const arrStr = confData.recommended_arrival;
+        const arrStr = confData?.recommended_arrival || liveInfo?.dates?.split("-")[0] || "";
         // Try to parse "Apr 28" style dates
         const months: Record<string, string> = {
           Jan: "01",
@@ -208,7 +234,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
 
       const result = await searchFlights({
         origin: origin.trim().toUpperCase(),
-        destination: confData.airport,
+        destination: effectiveAirport!,
         departureDate,
         max: 5,
       });
@@ -225,6 +251,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     budget,
     userPrefs,
     livePrice,
+    liveInfo,
   });
 
   if (!rawReport) {
@@ -246,10 +273,12 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   const airlineMatch = report.match(/\*\*Best Option:\*\*\s*([^\n]+)/);
 
   const structured = {
-    conference_name: confData?.name ?? conference,
-    destination_airport: confData?.airport ?? "See report",
-    recommended_arrival: confData?.recommended_arrival ?? "See report",
+    conference_name: liveInfo?.name ?? confData?.name ?? conference,
+    destination_airport: liveInfo?.airport ?? confData?.airport ?? "See report",
+    recommended_arrival:
+      confData?.recommended_arrival ?? liveInfo?.dates?.split("-")[0] ?? "See report",
     recommended_departure: confData?.recommended_departure ?? "See report",
+    data_source: liveInfo ? "web-search" : "static-db",
     price_range: priceMatch?.[1]?.trim() ?? "See report",
     book_by: bookByMatch?.[1]?.trim() ?? "See report",
     top_airline: airlineMatch?.[1]?.trim() ?? "See report",
