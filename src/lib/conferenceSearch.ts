@@ -83,11 +83,25 @@ If ${year} details are not yet announced or you only find ${year - 1} data → r
     if (!parsed || parsed === null) return null;
 
     // *** Year validation: reject if dates don't contain the target year ***
-    // Prevents Gemini from returning 2025 data labelled as 2026
     const datesStr = (parsed.dates || "").toString();
     if (!datesStr.includes(String(year))) {
       console.warn(
-        `[conferenceSearch] Rejected result — dates "${datesStr}" don't include ${year} (likely prior year data)`
+        `[conferenceSearch] Rejected — dates "${datesStr}" don't include ${year} (prior year data)`
+      );
+      return null;
+    }
+
+    // *** Name validation: returned conference must roughly match the query ***
+    // Prevents Gemini from substituting a related but different event
+    const returnedName = (parsed.name || "").toLowerCase();
+    const queryWords = conferenceName
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3);
+    const nameMatches = queryWords.filter((w) => returnedName.includes(w)).length;
+    if (queryWords.length > 0 && nameMatches === 0) {
+      console.warn(
+        `[conferenceSearch] Rejected — returned name "${parsed.name}" doesn't match query "${conferenceName}"`
       );
       return null;
     }
