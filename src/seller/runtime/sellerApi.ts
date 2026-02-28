@@ -59,5 +59,23 @@ export async function deliverJob(jobId: number, params: DeliverJobParams): Promi
     : "";
   console.log(`[sellerApi] deliverJob  jobId=${jobId}  deliverable=${delivStr}${transferStr}`);
 
-  return await client.post(`/acp/providers/jobs/${jobId}/deliverable`, params);
+  // Retry up to 5 times with exponential backoff (handles Virtuals 504s)
+  const MAX_RETRIES = 5;
+  const BASE_DELAY_MS = 3000;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await client.post(`/acp/providers/jobs/${jobId}/deliverable`, params);
+    } catch (err: any) {
+      const isLast = attempt === MAX_RETRIES;
+      const is5xx =
+        err?.response?.status >= 500 ||
+        (typeof err?.message === "string" && err.message.includes("504"));
+      if (isLast || !is5xx) throw err;
+      const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1); // 3s, 6s, 12s, 24s
+      console.warn(
+        `[sellerApi] deliverJob ${jobId} failed (attempt ${attempt}/${MAX_RETRIES}, HTTP ${err?.response?.status ?? "?"}). Retrying in ${delay / 1000}s…`
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
 }
