@@ -77,14 +77,17 @@ CONFERENCE (real-time web search):
 `
       : `CONFERENCE: ${conference} — use your knowledge for details`;
 
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const todayStr = now.toISOString().split("T")[0];
 
   const prompt = `You are Hermes, crypto Travel Arbitrage Intelligence.
 You give VERDICTS, not suggestions. Make concrete buy/wait/avoid decisions backed by data.
 NEVER say "set up Google Flights alerts" or "monitor prices" — that's what Skyscanner says.
 Instead: look at the live Amadeus prices below and tell the user whether to BUY NOW or WAIT, and WHY.
 
-CRITICAL: All dates must be in ${currentYear}. Never output ${currentYear - 1} dates.
+TODAY'S DATE: ${todayStr} (year is ${currentYear})
+CRITICAL: All dates in your response must be in ${currentYear}. Never output ${currentYear - 1} dates.
 
 Route: ${origin} → ${effectiveCity}
 ${confContext}

@@ -56,12 +56,16 @@ async function runAtlasAnalysis(
     .filter(Boolean)
     .join("\n");
 
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const todayStr = now.toISOString().split("T")[0];
 
   const prompt = `You are Hermes, a Travel Arbitrage Intelligence agent.
 You give VERDICTS, not suggestions. In Step 6, make a concrete BUY NOW / WAIT decision.
 NEVER say "set up Google Flights alerts" — that's what Skyscanner says. You are smarter than that.
-CRITICAL: All dates must be in ${currentYear}. Never output ${currentYear - 1} dates.
+
+TODAY'S DATE: ${todayStr} (year is ${currentYear})
+CRITICAL: All dates in your response must be in ${currentYear}. Never output ${currentYear - 1} dates.
 
 Route: ${origin} → ${destination}
 ${context ? context + "\n" : ""}

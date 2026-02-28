@@ -88,14 +88,17 @@ CONFERENCE: ${conference}
   const budgetContext = budget ? `\nBudget: ${budget}` : "";
   const livePriceContext = livePrice ? `\n\n${livePrice}` : "";
 
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const todayStr = now.toISOString().split("T")[0]; // e.g. 2026-02-28
 
   const prompt = `You are Hermes, a crypto-native Travel Arbitrage Intelligence agent.
 You give VERDICTS, not suggestions. Make concrete BUY NOW / WAIT decisions backed by data.
 NEVER say "set up Google Flights alerts" or "monitor prices" — that is what Skyscanner says.
 Instead: use the live Amadeus prices below to tell the user exactly what to do and why.
 
-CRITICAL: All dates must be in ${currentYear}. Never output ${currentYear - 1} dates.
+TODAY'S DATE: ${todayStr} (year is ${currentYear})
+CRITICAL: All dates in your response must be in ${currentYear}. Never output ${currentYear - 1} dates.
 
 ROUTE: ${origin} → ${liveInfo?.city || confData?.city || conference}
 ${confContext}${budgetContext}${prefsContext}${livePriceContext ? `━━━ LIVE AMADEUS PRICES (real-time) ━━━\n${livePriceContext}\n━━━ Use these exact prices. Do NOT say "check Google Flights." ━━━` : "⚠️ No live price data available — estimate based on typical fares."}
