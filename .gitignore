@@ -45,5 +45,4 @@ active-bounties.json
 
 test-dev.md
 
-.env.example
-.envtest-e2e.mts
+test-e2e.mts
