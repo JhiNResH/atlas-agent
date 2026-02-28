@@ -82,3 +82,68 @@ export function listConferencesSummary(): string {
 export function getAllConferences(): Conference[] {
   return Object.values(loadAll());
 }
+
+const MONTH_MAP: Record<string, number> = {
+  jan: 0,
+  feb: 1,
+  mar: 2,
+  apr: 3,
+  may: 4,
+  jun: 5,
+  jul: 6,
+  aug: 7,
+  sep: 8,
+  oct: 9,
+  nov: 10,
+  dec: 11,
+};
+
+function parseConferenceDateRange(dates: string): { start: Date; end: Date } | null {
+  // Handles: "Feb 27 - Mar 8, 2026" or "Sep 24-26, 2026"
+  const yearMatch = dates.match(/(\d{4})/);
+  const year = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+
+  const rangeMatch = dates.match(/([A-Za-z]+)\s+(\d+)\s*[-–]\s*(?:([A-Za-z]+)\s+)?(\d+)/);
+  if (!rangeMatch) return null;
+
+  const startMonth = MONTH_MAP[rangeMatch[1].toLowerCase().slice(0, 3)];
+  const startDay = parseInt(rangeMatch[2]);
+  const endMonth = rangeMatch[3] ? MONTH_MAP[rangeMatch[3].toLowerCase().slice(0, 3)] : startMonth;
+  const endDay = parseInt(rangeMatch[4]);
+
+  if (startMonth === undefined || endMonth === undefined) return null;
+
+  return {
+    start: new Date(year, startMonth, startDay),
+    end: new Date(year, endMonth, endDay, 23, 59),
+  };
+}
+
+export type ConferenceStatus = "upcoming" | "ongoing" | "past";
+
+/**
+ * Returns whether a conference is upcoming, currently ongoing, or already past.
+ */
+export function getConferenceStatus(conf: Conference): ConferenceStatus {
+  const now = new Date();
+  const range = parseConferenceDateRange(conf.dates);
+  if (!range) return "upcoming"; // Can't parse → assume upcoming
+  if (now < range.start) return "upcoming";
+  if (now > range.end) return "past";
+  return "ongoing";
+}
+
+/**
+ * Returns a warning string if the conference is past or starting today.
+ * Returns null if no warning needed.
+ */
+export function getConferenceWarning(conf: Conference): string | null {
+  const status = getConferenceStatus(conf);
+  if (status === "past") {
+    return `⚠️ **${conf.name} has already ended** (${conf.dates}). This report is for future planning reference only.`;
+  }
+  if (status === "ongoing") {
+    return `ℹ️ **${conf.name} is happening right now** (${conf.dates}). Flight planning for this conference may be too late — consider planning for next year.`;
+  }
+  return null;
+}

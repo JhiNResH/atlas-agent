@@ -7,7 +7,11 @@
  */
 
 import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeringTypes.js";
-import { findConference, listConferencesSummary } from "../../../../lib/conferences.js";
+import {
+  findConference,
+  listConferencesSummary,
+  getConferenceWarning,
+} from "../../../../lib/conferences.js";
 import { searchFlights, formatOffersForPrompt } from "../../../../lib/amadeus.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
@@ -167,6 +171,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   }
 
   const confData = findConference(conference);
+  const conferenceWarning = confData ? getConferenceWarning(confData) : null;
 
   // Fetch live prices if we know the airport
   let livePrice: string | undefined;
@@ -213,7 +218,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     }
   }
 
-  const report = await runConferenceFlight({
+  const rawReport = await runConferenceFlight({
     conference,
     origin,
     extraDays,
@@ -222,7 +227,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     livePrice,
   });
 
-  if (!report) {
+  if (!rawReport) {
     return {
       deliverable: JSON.stringify({
         report: `# Hermes: ${conference} from ${origin}\n\nAI analysis temporarily unavailable. Retry shortly.`,
@@ -231,6 +236,9 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       }),
     };
   }
+
+  // Prepend staleness warning if applicable
+  const report = conferenceWarning ? `${conferenceWarning}\n\n${rawReport}` : rawReport;
 
   // Extract structured data
   const priceMatch = report.match(/\*\*Price Target:\*\*\s*([^\n]+)/);

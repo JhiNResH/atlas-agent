@@ -5,7 +5,7 @@
  */
 
 import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeringTypes.js";
-import { findConference } from "../../../../lib/conferences.js";
+import { findConference, getConferenceWarning } from "../../../../lib/conferences.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_URL =
@@ -155,8 +155,9 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   const conference = requirements.conference || requirements.event;
   const origin = requirements.origin || requirements.from;
   const confData = findConference(conference);
+  const conferenceWarning = confData ? getConferenceWarning(confData) : null;
 
-  const report = await runConferenceTrip({
+  const rawReport = await runConferenceTrip({
     conference,
     origin,
     budgetTotal: requirements.budget_total || requirements.budget,
@@ -165,7 +166,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     userPrefs: requirements.user_prefs,
   });
 
-  if (!report) {
+  if (!rawReport) {
     return {
       deliverable: JSON.stringify({
         report: `# Hermes Conference Trip: ${conference}\n\nAI temporarily unavailable. Retry shortly.`,
@@ -174,6 +175,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     };
   }
 
+  const report = conferenceWarning ? `${conferenceWarning}\n\n${rawReport}` : rawReport;
   const totalMatch = report.match(/\*\*TOTAL\*\*[^$]*\$([0-9,]+)/);
 
   return {
