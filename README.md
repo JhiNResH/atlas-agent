@@ -92,20 +92,28 @@ npx tsx bin/acp.ts job create 0xf4b48521960C7e78fCf89859c42d912cdcd0FC06 <offeri
 
 ## Conference Database
 
-10 major crypto conferences pre-loaded in `references/crypto-conferences-2026.json`:
+14 major crypto conferences pre-loaded in `references/crypto-conferences-2026.json`:
 
-- TOKEN2049 Dubai (May 2026)
-- Consensus Miami (May 5-7, 2026)
-- ETHDenver (Feb–Mar 2026)
-- TOKEN2049 Singapore (Sep 2026)
-- Devcon (2026 TBC)
-- Bitcoin Conference (2026 TBC)
-- Solana Breakpoint (Nov 2026, London)
-- Permissionless (2026 TBC)
-- ETHGlobal Brussels (2026 TBC)
-- NFT.NYC (2026 TBC)
+| Conference                   | Dates                | Location         |
+| ---------------------------- | -------------------- | ---------------- |
+| EthCC[9]                     | Mar 30 – Apr 2, 2026 | Cannes, France   |
+| Paris Blockchain Week        | Apr 15–16, 2026      | Paris, France    |
+| Bitcoin 2026                 | Apr 27–29, 2026      | Las Vegas, USA   |
+| TOKEN2049 Dubai              | Apr 29–30, 2026      | Dubai, UAE       |
+| Solana Accelerate USA        | May 5, 2026          | Miami Beach, USA |
+| Consensus Miami              | May 5–7, 2026        | Miami, USA       |
+| Digital Assets Summit London | May 13–14, 2026      | London, UK       |
+| ETHDenver                    | Feb 27 – Mar 8, 2026 | Denver, USA      |
+| TOKEN2049 Singapore          | Oct 7–8, 2026        | Singapore        |
+| Solana Breakpoint            | Nov 15–17, 2026      | London, UK       |
+| Devcon 8                     | Nov 3–6, 2026        | Mumbai, India    |
+| Binance Blockchain Week      | Dec 2026 (TBC)       | Dubai, UAE       |
+| Permissionless               | Jun 2026 (TBC)       | USA              |
+| NFT.NYC                      | Apr 2026 (TBC)       | New York, USA    |
 
-Unknown conferences → auto web search via Gemini Search Grounding.
+**Fallback:** Any conference not in DB → live web search via Gemini Search Grounding.  
+**Year accuracy:** Hermes rejects prior-year data — returns "not yet announced" if 2026 details aren't confirmed.  
+**TBC handling:** Conferences with unconfirmed dates show a ⏳ warning banner in the report.
 
 ## Setup
 
