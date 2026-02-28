@@ -56,11 +56,16 @@ async function runAtlasAnalysis(
     .filter(Boolean)
     .join("\n");
 
-  const prompt = `You are Hermes, a Travel Arbitrage Intelligence agent. Run a complete 7-step flight research report for:
+  const currentYear = new Date().getFullYear();
+
+  const prompt = `You are Hermes, a Travel Arbitrage Intelligence agent.
+You give VERDICTS, not suggestions. In Step 6, make a concrete BUY NOW / WAIT decision.
+NEVER say "set up Google Flights alerts" — that's what Skyscanner says. You are smarter than that.
+CRITICAL: All dates must be in ${currentYear}. Never output ${currentYear - 1} dates.
 
 Route: ${origin} → ${destination}
 ${context ? context + "\n" : ""}
-Produce a structured markdown report with ALL 7 sections. Be specific, data-driven, and actionable. Use real airline names, real price estimates, real booking platforms.
+Produce a structured markdown report with ALL 7 sections. Be specific, data-driven, and opinionated. Use real airline names, real prices, real booking platforms.
 
 ---
 
@@ -98,12 +103,14 @@ For each strategy, explain clearly with risk level [LOW/MEDIUM/HIGH]:
 - Best credit card transfer chains (Chase UR, Amex MR, Citi TYP)
 - Verdict: use points or pay cash? Why?
 
-## Step 6: Price Monitoring Strategy
-Specific action plan:
-1. Set up Google Flights price alert (exact steps)
-2. Recommended alert tools (Hopper, Kayak, Going.com)
-3. Booking trigger: book when price drops below $[X]
-4. How far out to set alerts
+## Step 6: Buy Now or Wait? (Hermes Verdict)
+Use the live Amadeus prices in this prompt. Do NOT say "set up Google Flights alerts" — make a decision.
+- **Current price:** $[from live data, or estimate if none]
+- **Typical range for this route:** $[low]–$[high]
+- **Assessment:** [Is current price below/above typical? By how much?]
+- **🟢 BUY NOW / 🟡 WAIT [X weeks] / 🔴 AVOID** — [1-sentence reason]
+- **Booking trigger:** [If waiting: "Book immediately when price drops below $X" — give a specific number]
+- **Price direction:** [Is it likely to rise (conference approaching, peak season) or fall?]
 
 ## Step 7: Final Booking Audit Checklist
 - [ ] Baggage fees checked (especially ULCCs)
@@ -115,10 +122,11 @@ Specific action plan:
 ---
 
 ## 🏆 Hermes Recommendation
-**Best Option:** [1 sentence — specific airline + route]
-**Price Target:** [specific range]
-**Book By:** [when to book]
-**Next Action:** [one thing to do right now]
+**Best Option:** [1 sentence — specific airline + route + price]
+**Price Target:** [specific range for ${currentYear}]
+**Book By:** [specific ${currentYear} date]
+**🟢 BUY NOW / 🟡 WAIT [X weeks] / 🔴 AVOID** — [1-sentence verdict using current price vs. typical range]
+**Next Action:** [One concrete action — NOT "set up an alert". E.g. "Go to united.com and book flight UA###, $XXX, departs [date]."]
 
 ---
 *Powered by Hermes — Travel Arbitrage Intelligence*
@@ -276,8 +284,8 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   if (!report) {
     return {
       deliverable: JSON.stringify({
-        report: `# ✈️ Hermes: ${origin} → ${destination}\n\nAI analysis temporarily unavailable. Try:\n1. Google Flights\n2. Kayak price alerts\n3. Going.com for mistake fares`,
-        topPick: "Check Google Flights",
+        report: `# ✈️ Hermes: ${origin} → ${destination}\n\nAI analysis temporarily unavailable. Retry shortly.`,
+        topPick: "Retry in 1 minute",
         priceRange: "Varies",
         bestBookingWindow: "4-8 weeks ahead",
         poweredBy: "Hermes — Travel Arbitrage Intelligence",
