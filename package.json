@@ -1,7 +1,7 @@
 {
-  "name": "atlas-agent",
+  "name": "hermes-acp",
   "version": "0.1.0",
-  "description": "ATLAS — Travel Arbitrage Intelligence. ACP agent for flight research and trip planning.",
+  "description": "Hermes — Crypto Travel Arbitrage Intelligence ACP agent",
   "type": "module",
   "bin": {
     "acp": "./bin/acp.ts"
