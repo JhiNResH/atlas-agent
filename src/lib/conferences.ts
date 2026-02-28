@@ -145,5 +145,9 @@ export function getConferenceWarning(conf: Conference): string | null {
   if (status === "ongoing") {
     return `ℹ️ **${conf.name} is happening right now** (${conf.dates}). Flight planning for this conference may be too late — consider planning for next year.`;
   }
+  // TBC dates: we have the conference but dates aren't confirmed yet
+  if (conf.dates.includes("TBC") || conf.dates.toLowerCase().includes("tbc")) {
+    return `⏳ **${conf.name} dates are not yet confirmed.** The information below is based on historical patterns and may change. Check the official website before booking.`;
+  }
   return null;
 }

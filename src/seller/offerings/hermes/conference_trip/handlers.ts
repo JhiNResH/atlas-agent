@@ -282,7 +282,10 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
         dates: confData?.dates ?? liveInfo?.dates ?? "See report",
         data_source: liveInfo ? "web-search" : "static-db",
         estimated_total: totalMatch ? `$${totalMatch[1]}` : "See budget section",
-        visa_required: confData?.visa_notes?.toLowerCase().includes("no visa") ? false : true,
+        visa_required: (() => {
+          const notes = (confData?.visa_notes ?? liveInfo?.visa_notes ?? "").toLowerCase();
+          return notes ? !notes.includes("no visa") : null; // null = unknown
+        })(),
       },
       next_step: {
         offering: "multi_conference_router",
