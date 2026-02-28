@@ -253,17 +253,7 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     }
   }
 
-  const rawReport = await runConferenceFlight({
-    conference,
-    origin,
-    extraDays,
-    budget,
-    userPrefs,
-    livePrice,
-    liveInfo,
-  });
-
-  // If dates not yet announced and not in DB, say so honestly
+  // Early exit: if dates not yet announced and not in static DB, don't waste a Gemini call
   if (notYetAnnounced) {
     return {
       deliverable: JSON.stringify({
@@ -273,6 +263,16 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       }),
     };
   }
+
+  const rawReport = await runConferenceFlight({
+    conference,
+    origin,
+    extraDays,
+    budget,
+    userPrefs,
+    livePrice,
+    liveInfo,
+  });
 
   if (!rawReport) {
     return {

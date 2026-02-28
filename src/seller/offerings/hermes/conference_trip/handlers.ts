@@ -6,6 +6,8 @@
 
 import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeringTypes.js";
 import { findConference, getConferenceWarning } from "../../../../lib/conferences.js";
+import { searchConferenceInfo } from "../../../../lib/conferenceSearch.js";
+import { searchFlights, formatOffersForPrompt } from "../../../../lib/amadeus.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_URL =
@@ -35,16 +37,28 @@ async function runConferenceTrip(params: {
   extraDays?: number;
   tripStyle?: string;
   userPrefs?: Record<string, any>;
+  liveInfo?: {
+    name: string;
+    city: string;
+    country: string;
+    airport: string;
+    dates: string;
+    venue?: string;
+  } | null;
+  livePrice?: string;
 }): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
-  const { conference, origin, budgetTotal, extraDays, tripStyle, userPrefs } = params;
+  const { conference, origin, budgetTotal, extraDays, tripStyle, userPrefs, liveInfo, livePrice } =
+    params;
   const confData = findConference(conference);
   const style = tripStyle ?? "mid-range";
+  const effectiveCity = confData?.city ?? liveInfo?.city ?? conference;
+  const effectiveVenue = confData?.venue ?? liveInfo?.venue ?? "See conference website";
 
   const confContext = confData
     ? `
-CONFERENCE (verified):
+CONFERENCE (verified static DB):
 - Name: ${confData.name} | Dates: ${confData.dates}
 - Side Events: ${confData.side_events_dates}
 - Venue: ${confData.venue}
@@ -54,19 +68,27 @@ CONFERENCE (verified):
 - Side events to know: ${confData.notable_side_events.join(", ")}
 - Visa (US passport): ${confData.visa_notes}
 `
-    : `CONFERENCE: ${conference} — use your knowledge for details`;
+    : liveInfo
+      ? `
+CONFERENCE (real-time web search):
+- Name: ${liveInfo.name} | Dates: ${liveInfo.dates}
+- Location: ${liveInfo.city}, ${liveInfo.country} (Airport: ${liveInfo.airport})
+- Venue: ${liveInfo.venue ?? "See official website"}
+`
+      : `CONFERENCE: ${conference} — use your knowledge for details`;
 
   const prompt = `You are Hermes, crypto Travel Arbitrage Intelligence.
 
-Route: ${origin} → ${confData?.city || conference}
+Route: ${origin} → ${effectiveCity}
 ${confContext}
+${livePrice ? `LIVE AMADEUS FLIGHT DATA (use these for pricing):\n${livePrice}\n` : ""}
 Budget: ${budgetTotal || "flexible"}
 Style: ${style}
 ${userPrefs ? `Preferences: ${JSON.stringify(userPrefs)}` : ""}
 
 Produce a complete conference trip plan. Be specific — real hotel names, real neighborhoods, real airlines.
 
-# 🌍 Hermes Conference Trip: ${confData?.name || conference}
+# 🌍 Hermes Conference Trip: ${liveInfo?.name ?? confData?.name ?? conference}
 
 ## ✈️ Flights from ${origin}
 - **Best option:** [airline + price + dates]
@@ -75,7 +97,7 @@ Produce a complete conference trip plan. Be specific — real hotel names, real 
 - **Pro tip:** [one specific hack for this route]
 
 ## 🏨 Hotels Near Venue
-(Prioritize walking distance or short ride to ${confData?.venue || "venue"})
+(Prioritize walking distance or short ride to ${effectiveVenue})
 
 | Option | Hotel / Area | Price/Night | Distance to Venue |
 |--------|-------------|-------------|-------------------|
@@ -87,7 +109,7 @@ Produce a complete conference trip plan. Be specific — real hotel names, real 
 - **Book by:** [date — conferences sell out fast]
 
 ## 📅 Conference Schedule & Side Events
-- **Main event:** ${confData?.dates || "See conference website"}
+- **Main event:** ${confData?.dates ?? liveInfo?.dates ?? "See conference website"}
 - **Key side events:** ${confData?.notable_side_events?.join(", ") || "Check conference socials"}
 - **Recommended full schedule:**
   - [Day -2]: Arrive, check in, scout venue
@@ -157,6 +179,76 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   const confData = findConference(conference);
   const conferenceWarning = confData ? getConferenceWarning(confData) : null;
 
+  // Web search fallback if not in DB or dates are TBC
+  let liveInfo = null;
+  let notYetAnnounced = false;
+  if (!confData || confData.dates.includes("TBC")) {
+    console.log(`[hermes:trip] Conference "${conference}" not in DB or TBC — searching web…`);
+    liveInfo = await searchConferenceInfo(conference);
+    if (liveInfo) {
+      console.log(
+        `[hermes:trip] Web search found: ${liveInfo.name} @ ${liveInfo.city}, ${liveInfo.dates}`
+      );
+    } else {
+      notYetAnnounced = !confData;
+      console.log(`[hermes:trip] No confirmed data found for "${conference}"`);
+    }
+  }
+
+  // Early exit: dates not yet announced
+  if (notYetAnnounced) {
+    return {
+      deliverable: JSON.stringify({
+        report: `# Hermes Conference Trip: ${conference}\n\n⏳ **${new Date().getFullYear()} dates not yet announced.**\n\nHermes searched the web but could not find confirmed ${new Date().getFullYear()} details for this conference. Check the official website or follow their socials for the announcement.\n\nOnce dates are confirmed, retry this job for a full trip plan with flights, hotels, and budget breakdown.\n\n*Powered by Hermes — Crypto Travel Arbitrage Intelligence*`,
+        structured: { conference_name: conference, data_source: "not-announced" },
+        poweredBy: "Hermes",
+      }),
+    };
+  }
+
+  // Fetch live flight prices
+  const effectiveAirport = confData?.airport ?? liveInfo?.airport;
+  let livePrice: string | undefined;
+  if (effectiveAirport) {
+    try {
+      const arrStr = confData?.recommended_arrival ?? liveInfo?.dates?.split("-")[0] ?? "";
+      const months: Record<string, string> = {
+        Jan: "01",
+        Feb: "02",
+        Mar: "03",
+        Apr: "04",
+        May: "05",
+        Jun: "06",
+        Jul: "07",
+        Aug: "08",
+        Sep: "09",
+        Oct: "10",
+        Nov: "11",
+        Dec: "12",
+      };
+      const match = arrStr.match(/([A-Za-z]+)\s+(\d+)/);
+      let departureDate: string;
+      if (match) {
+        const mon = months[match[1]] || "06";
+        const yr = new Date().getFullYear() + (parseInt(mon) < new Date().getMonth() + 1 ? 1 : 0);
+        departureDate = `${yr}-${mon}-${String(match[2]).padStart(2, "0")}`;
+      } else {
+        const d = new Date();
+        d.setDate(d.getDate() + 56);
+        departureDate = d.toISOString().split("T")[0];
+      }
+      const result = await searchFlights({
+        origin: origin.trim().toUpperCase(),
+        destination: effectiveAirport,
+        departureDate,
+        max: 5,
+      });
+      livePrice = formatOffersForPrompt(result);
+    } catch {
+      // Silent fallback
+    }
+  }
+
   const rawReport = await runConferenceTrip({
     conference,
     origin,
@@ -164,6 +256,8 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     extraDays: requirements.extra_days ? Number(requirements.extra_days) : 0,
     tripStyle: requirements.trip_style,
     userPrefs: requirements.user_prefs,
+    liveInfo,
+    livePrice,
   });
 
   if (!rawReport) {
@@ -182,10 +276,11 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     deliverable: JSON.stringify({
       report,
       structured: {
-        conference_name: confData?.name ?? conference,
-        destination: confData?.city ?? "See report",
-        airport: confData?.airport ?? "See report",
-        dates: confData?.dates ?? "See report",
+        conference_name: liveInfo?.name ?? confData?.name ?? conference,
+        destination: confData?.city ?? liveInfo?.city ?? "See report",
+        airport: confData?.airport ?? liveInfo?.airport ?? "See report",
+        dates: confData?.dates ?? liveInfo?.dates ?? "See report",
+        data_source: liveInfo ? "web-search" : "static-db",
         estimated_total: totalMatch ? `$${totalMatch[1]}` : "See budget section",
         visa_required: confData?.visa_notes?.toLowerCase().includes("no visa") ? false : true,
       },
