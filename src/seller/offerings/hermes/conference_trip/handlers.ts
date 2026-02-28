@@ -295,32 +295,42 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   const report = conferenceWarning ? `${conferenceWarning}\n\n${rawReport}` : rawReport;
   const totalMatch = report.match(/\*\*TOTAL\*\*[^$]*\$([0-9,]+)/);
 
+  const structured = {
+    conference_name: liveInfo?.name ?? confData?.name ?? conference,
+    destination: confData?.city ?? liveInfo?.city ?? "See report",
+    airport: confData?.airport ?? liveInfo?.airport ?? "See report",
+    dates: confData?.dates ?? liveInfo?.dates ?? "See report",
+    data_source: liveInfo ? "web-search" : "static-db",
+    estimated_total: totalMatch ? `$${totalMatch[1]}` : "See budget section",
+    visa_required: (() => {
+      const notes = (confData?.visa_notes ?? liveInfo?.visa_notes ?? "").toLowerCase();
+      return notes ? !notes.includes("no visa") : null;
+    })(),
+  };
+
+  const verdictMatch = report.match(/(🟢 BUY NOW|🟡 WAIT[^—\n]*|🔴 AVOID)[^—\n]*—\s*([^\n]+)/);
+
+  const summary = [
+    `🌍 ${structured.conference_name} · ${structured.dates}`,
+    `💰 Estimated total: ${structured.estimated_total}`,
+    verdictMatch
+      ? `${verdictMatch[1].trim()}: ${verdictMatch[2].trim().slice(0, 100)}`
+      : `🏨 Hotels + flights + side events in full report`,
+  ];
+
   return {
     deliverable: JSON.stringify({
+      summary,
       report,
-      structured: {
-        conference_name: liveInfo?.name ?? confData?.name ?? conference,
-        destination: confData?.city ?? liveInfo?.city ?? "See report",
-        airport: confData?.airport ?? liveInfo?.airport ?? "See report",
-        dates: confData?.dates ?? liveInfo?.dates ?? "See report",
-        data_source: liveInfo ? "web-search" : "static-db",
-        estimated_total: totalMatch ? `$${totalMatch[1]}` : "See budget section",
-        visa_required: (() => {
-          const notes = (confData?.visa_notes ?? liveInfo?.visa_notes ?? "").toLowerCase();
-          return notes ? !notes.includes("no visa") : null; // null = unknown
-        })(),
-      },
+      structured,
       next_step: {
         offering: "multi_conference_router",
         provider: "0xf4b48521960C7e78fCf89859c42d912cdcd0FC06",
         price: 0.8,
-        requirements: {
-          conferences: [confData?.slug ?? conference, "ADD_ANOTHER"],
-          origin,
-        },
+        requirements: { conferences: [confData?.slug ?? conference, "ADD_ANOTHER"], origin },
         hint: "Add more conferences to optimize full-year routing and save $300-800",
       },
-      poweredBy: "Hermes — Crypto Travel Arbitrage Intelligence | Powered by Gemini Flash",
+      poweredBy: "Hermes — Crypto Travel Arbitrage Intelligence | Powered by Gemini 3 Flash",
     }),
   };
 }

@@ -339,12 +339,28 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     hint: "Add hotels near venue, side events schedule, and full budget breakdown",
   };
 
+  // Extract BUY/WAIT verdict from report
+  const verdictMatch = report.match(/(🟢 BUY NOW|🟡 WAIT[^—\n]*|🔴 AVOID)[^—\n]*—\s*([^\n]+)/);
+
+  const summary = [
+    structured.top_airline !== "See report"
+      ? `✈️ Best flight: ${structured.top_airline} · ${structured.price_range}`
+      : `✈️ To: ${structured.destination_airport} · ${structured.price_range}`,
+    structured.book_by !== "See report"
+      ? `📅 Book by: ${structured.book_by}`
+      : `📅 Arrive: ${structured.recommended_arrival}`,
+    verdictMatch
+      ? `${verdictMatch[1].trim()}: ${verdictMatch[2].trim().slice(0, 100)}`
+      : `💡 Full analysis in report`,
+  ];
+
   return {
     deliverable: JSON.stringify({
+      summary, // 3-bullet TL;DR
       report,
       structured,
       next_step,
-      poweredBy: "Hermes — Crypto Travel Arbitrage Intelligence | Powered by Gemini Flash",
+      poweredBy: "Hermes — Crypto Travel Arbitrage Intelligence | Powered by Gemini 3 Flash",
     }),
   };
 }

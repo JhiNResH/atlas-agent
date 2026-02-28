@@ -7,6 +7,8 @@
 
 import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeringTypes.js";
 import { findConference, type Conference } from "../../../../lib/conferences.js";
+import { searchFlights, formatOffersForPrompt } from "../../../../lib/amadeus.js";
+import { logUsage } from "../../../../lib/usageLogger.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_URL =
@@ -40,10 +42,14 @@ async function runMultiRouter(params: {
   year?: number;
   budgetTotal?: string;
   userPrefs?: Record<string, any>;
+  livePrices?: Record<string, string>;
 }): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
-  const { conferences, origin, year, budgetTotal, userPrefs } = params;
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const todayStr = now.toISOString().split("T")[0];
+  const { conferences, origin, year, budgetTotal, userPrefs, livePrices } = params;
 
   // Resolve all conferences from DB
   const resolved: { query: string; data: Conference | null }[] = conferences.map((q) => ({
@@ -54,23 +60,30 @@ async function runMultiRouter(params: {
   const confDetails = resolved
     .map(({ query, data }) => {
       if (!data) return `- ${query}: (not in DB — use your knowledge)`;
-      return `- ${data.name}: ${data.dates} | ${data.city}, ${data.country} (${data.airport}) | Stay: ${data.recommended_arrival} → ${data.recommended_departure}`;
+      const priceStr = livePrices?.[data.slug]
+        ? `\n  ↳ Live Amadeus: ${livePrices[data.slug]}`
+        : "";
+      return `- ${data.name}: ${data.dates} | ${data.city}, ${data.country} (${data.airport}) | Stay: ${data.recommended_arrival} → ${data.recommended_departure}${priceStr}`;
     })
     .join("\n");
 
   const prompt = `You are Hermes, crypto Travel Arbitrage Intelligence specializing in multi-conference routing.
+You give VERDICTS. Never say "Set Google Flights alerts." Make concrete book/wait decisions.
+
+TODAY'S DATE: ${todayStr} (year is ${currentYear})
+CRITICAL: All dates must be in ${currentYear}. Never output ${currentYear - 1} dates.
 
 HOME CITY: ${origin}
-YEAR: ${year || 2026}
-CONFERENCES TO ATTEND:
+YEAR: ${year || currentYear}
+CONFERENCES TO ATTEND (live Amadeus prices where available):
 ${confDetails}
 
 ${budgetTotal ? `Annual Travel Budget: ${budgetTotal}` : ""}
 ${userPrefs ? `Preferences: ${JSON.stringify(userPrefs)}` : ""}
 
-Analyze the optimal routing strategy. Compare separate roundtrips vs multi-stop itineraries.
+Analyze the optimal routing strategy. Compare separate roundtrips vs multi-stop itineraries. Use the live Amadeus prices to give real cost estimates.
 
-# 🗺️ Hermes Multi-Conference Router: ${year || 2026}
+# 🗺️ Hermes Multi-Conference Router: ${year || currentYear}
 
 ## 📊 Route Comparison
 
@@ -118,7 +131,7 @@ ${resolved.map(({ data, query }) => `- **${data?.name || query}:** Book by [date
 1. [Most urgent action — closest conference]
 2. [Second action]
 3. [Third action]
-4. Set Google Flights alerts for all routes today
+4. ✅ All actions above are concrete — no "set alerts" needed
 
 ## 🔮 Bonus: Conferences You Might Be Missing
 Based on your travel pattern, also consider:
@@ -162,12 +175,69 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     };
   }
 
+  // Log usage
+  logUsage({
+    ts: new Date().toISOString(),
+    offering: "multi_conference_router",
+    origin,
+    success: true,
+  });
+
+  // Fetch Amadeus prices for each conference in parallel (cap at 4 to avoid timeout)
+  const resolved = conferences.slice(0, 4).map((q) => ({ q, data: findConference(q) }));
+  const months: Record<string, string> = {
+    Jan: "01",
+    Feb: "02",
+    Mar: "03",
+    Apr: "04",
+    May: "05",
+    Jun: "06",
+    Jul: "07",
+    Aug: "08",
+    Sep: "09",
+    Oct: "10",
+    Nov: "11",
+    Dec: "12",
+  };
+  const livePrices: Record<string, string> = {};
+  await Promise.allSettled(
+    resolved
+      .filter(({ data }) => data?.airport)
+      .map(async ({ data }) => {
+        if (!data) return;
+        const arrStr = data.recommended_arrival || "";
+        const match = arrStr.match(/([A-Za-z]+)\s+(\d+)/);
+        let depDate: string;
+        if (match) {
+          const mon = months[match[1]] || "06";
+          const yr = new Date().getFullYear() + (parseInt(mon) < new Date().getMonth() + 1 ? 1 : 0);
+          depDate = `${yr}-${mon}-${String(match[2]).padStart(2, "0")}`;
+        } else {
+          const d = new Date();
+          d.setDate(d.getDate() + 90);
+          depDate = d.toISOString().split("T")[0];
+        }
+        try {
+          const result = await searchFlights({
+            origin: origin.trim().toUpperCase(),
+            destination: data.airport,
+            departureDate: depDate,
+            max: 3,
+          });
+          livePrices[data.slug] = formatOffersForPrompt(result);
+        } catch {
+          /* silent fallback */
+        }
+      })
+  );
+
   const report = await runMultiRouter({
     conferences,
     origin,
     year: requirements.year,
     budgetTotal: requirements.budget_total,
     userPrefs: requirements.user_prefs,
+    livePrices: Object.keys(livePrices).length > 0 ? livePrices : undefined,
   });
 
   if (!report) {

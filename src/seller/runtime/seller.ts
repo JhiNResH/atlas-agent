@@ -24,11 +24,22 @@ import {
 /** Minimal HTTP health server for Railway (expects a listening PORT). */
 function startHealthServer(): void {
   const port = parseInt(process.env.PORT ?? "8080", 10);
+  const startTime = new Date().toISOString();
+
   createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", agent: "hermes" }));
+    res.end(JSON.stringify({ status: "ok", agent: "hermes", upSince: startTime }));
   }).listen(port, () => {
     console.log(`[seller] Health server listening on port ${port}`);
+    // Self-ping every 8 minutes to prevent Railway cold starts
+    setInterval(
+      () => {
+        fetch(`http://localhost:${port}/`)
+          .then(() => {}) // silent keepalive
+          .catch(() => {}); // ignore errors
+      },
+      8 * 60 * 1000
+    );
   });
 }
 
