@@ -132,7 +132,7 @@ Flight research done. Ready to go deeper?
 **Hermes Trip Planner** ($0.50) includes:
 - ✅ Hotel picks (budget / mid-range / splurge) with real prices
 - ✅ Visa requirements for US passport holders
-- ✅ Day-by-day itinerary (${durationDays ?? 7} days)
+- ✅ Day-by-day itinerary (7 days)
 - ✅ Complete budget breakdown
 
 **Next job (copy & run):**
