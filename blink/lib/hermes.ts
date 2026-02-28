@@ -60,21 +60,11 @@ export async function queryConferenceFlights(params: {
     }
   }
 
-  // Option 2: Direct handler import (local dev / monorepo)
-  // This works when blink/ is inside hermes-acp
-  try {
-    // Dynamic import to avoid build-time issues
-    const { executeJob } =
-      await import("../../src/seller/offerings/hermes/conference_travel/handlers.js");
-
-    const result = await executeJob({ conference, origin });
-    const deliverable =
-      typeof result.deliverable === "string" ? JSON.parse(result.deliverable) : result.deliverable;
-    return parseHermesResponse(deliverable);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return { success: false, error: `Direct handler call failed: ${message}` };
-  }
+  // HERMES_API_URL is required for production
+  return {
+    success: false,
+    error: "HERMES_API_URL is not configured. Set it to the Railway Hermes service URL.",
+  };
 }
 
 /**
