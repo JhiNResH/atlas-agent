@@ -185,7 +185,6 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
   }
 
   const confData = findConference(conference);
-  const conferenceWarning = confData ? getConferenceWarning(confData) : null;
 
   // Web search if conference not in DB or has TBC dates
   let liveInfo = null;
@@ -204,6 +203,9 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       );
     }
   }
+
+  // TBC warning: only show if liveInfo didn't resolve the dates (suppress when web search confirmed)
+  const conferenceWarning = confData && !liveInfo ? getConferenceWarning(confData) : null;
 
   // Effective airport: liveInfo > confData
   const effectiveAirport = liveInfo?.airport || confData?.airport;
