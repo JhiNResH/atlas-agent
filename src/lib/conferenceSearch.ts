@@ -72,12 +72,25 @@ If ${year} details are not yet announced or you only find ${year - 1} data → r
     const data: any = await res.json();
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
+    // Handle explicit null response
+    if (raw.trim() === "null" || raw.trim().startsWith("null")) return null;
+
     // Extract JSON from response
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
 
     const parsed = JSON.parse(jsonMatch[0]);
     if (!parsed || parsed === null) return null;
+
+    // *** Year validation: reject if dates don't contain the target year ***
+    // Prevents Gemini from returning 2025 data labelled as 2026
+    const datesStr = (parsed.dates || "").toString();
+    if (!datesStr.includes(String(year))) {
+      console.warn(
+        `[conferenceSearch] Rejected result — dates "${datesStr}" don't include ${year} (likely prior year data)`
+      );
+      return null;
+    }
 
     return { ...parsed, source: "web-search" };
   } catch {
