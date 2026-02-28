@@ -28,8 +28,15 @@ export async function searchConferenceInfo(
 ): Promise<ConferenceLiveInfo | null> {
   if (!GEMINI_API_KEY) return null;
 
+  // Sanitize user input before injecting into prompt
+  const safeName = conferenceName
+    .replace(/["`\\]/g, "")
+    .slice(0, 100)
+    .trim();
+  if (!safeName) return null;
+
   const year = new Date().getFullYear();
-  const prompt = `Search the web for the OFFICIAL, CONFIRMED details for "${conferenceName} ${year}".
+  const prompt = `Search the web for the OFFICIAL, CONFIRMED details for "${safeName} ${year}".
 
 STRICT RULES:
 1. Only return data explicitly confirmed for ${year} — not previous years

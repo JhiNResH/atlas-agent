@@ -26,10 +26,27 @@ export async function getRoutePriceHistory(
 ): Promise<PriceHistory | null> {
   if (!GEMINI_API_KEY) return null;
 
-  const year = new Date().getFullYear();
-  const monthContext = travelMonth ? ` for ${travelMonth} ${year}` : ` in ${year}`;
+  // Sanitize user input
+  const safeOrigin = origin
+    .replace(/["`\\<>]/g, "")
+    .slice(0, 10)
+    .toUpperCase()
+    .trim();
+  const safeDest = destination
+    .replace(/["`\\<>]/g, "")
+    .slice(0, 10)
+    .toUpperCase()
+    .trim();
+  const safeMonth = travelMonth
+    ?.replace(/["`\\<>]/g, "")
+    .slice(0, 30)
+    .trim();
+  if (!safeOrigin || !safeDest) return null;
 
-  const prompt = `Search the web for typical economy roundtrip flight prices from ${origin} to ${destination}${monthContext}.
+  const year = new Date().getFullYear();
+  const monthContext = safeMonth ? ` for ${safeMonth} ${year}` : ` in ${year}`;
+
+  const prompt = `Search the web for typical economy roundtrip flight prices from ${safeOrigin} to ${safeDest}${monthContext}.
 
 Find real price data from Google Flights, Kayak, Skyscanner, or airline sources.
 
@@ -70,7 +87,7 @@ Use real search data. If you can't find reliable data, return null.`;
     if (!parsed?.typicalAverage) return null;
 
     return {
-      route: `${origin} → ${destination}`,
+      route: `${safeOrigin} → ${safeDest}`,
       typicalLow: parsed.typicalLow || "N/A",
       typicalHigh: parsed.typicalHigh || "N/A",
       typicalAverage: parsed.typicalAverage || "N/A",
