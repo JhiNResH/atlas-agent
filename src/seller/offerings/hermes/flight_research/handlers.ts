@@ -5,6 +5,7 @@
  */
 
 import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeringTypes.js";
+import { logUsage } from "../../../../lib/usageLogger.js";
 import { searchFlights, formatOffersForPrompt } from "../../../../lib/amadeus.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
@@ -235,6 +236,16 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       }),
     };
   }
+
+  // Log usage for analytics
+  logUsage({
+    ts: new Date().toISOString(),
+    offering: "flight_research",
+    origin,
+    destination,
+    travel_month: travelMonth,
+    success: true,
+  });
 
   // Fetch live prices from Amadeus before Gemini analysis
   let livePrice: string | undefined;

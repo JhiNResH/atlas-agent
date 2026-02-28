@@ -8,6 +8,7 @@ import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeri
 import { findConference, getConferenceWarning } from "../../../../lib/conferences.js";
 import { searchConferenceInfo } from "../../../../lib/conferenceSearch.js";
 import { searchFlights, formatOffersForPrompt } from "../../../../lib/amadeus.js";
+import { logUsage } from "../../../../lib/usageLogger.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_URL =
@@ -203,6 +204,16 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       console.log(`[hermes:trip] No confirmed data found for "${conference}"`);
     }
   }
+
+  // Log usage for analytics
+  logUsage({
+    ts: new Date().toISOString(),
+    offering: "conference_trip",
+    conference,
+    origin,
+    data_source: notYetAnnounced ? "not-announced" : liveInfo ? "web-search" : "static-db",
+    success: true,
+  });
 
   // Early exit: dates not yet announced
   if (notYetAnnounced) {

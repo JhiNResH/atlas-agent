@@ -7,6 +7,7 @@
  */
 
 import type { ExecuteJobResult, ValidationResult } from "../../../runtime/offeringTypes.js";
+import { logUsage } from "../../../../lib/usageLogger.js";
 import {
   findConference,
   listConferencesSummary,
@@ -263,6 +264,17 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
       // Silent fallback
     }
   }
+
+  // Log usage for analytics
+  const _jobStart = Date.now();
+  logUsage({
+    ts: new Date().toISOString(),
+    offering: "conference_travel",
+    conference,
+    origin,
+    data_source: notYetAnnounced ? "not-announced" : liveInfo ? "web-search" : "static-db",
+    success: true, // optimistic; overwritten on error
+  });
 
   // Early exit: if dates not yet announced and not in static DB, don't waste a Gemini call
   if (notYetAnnounced) {
