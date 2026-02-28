@@ -9,7 +9,7 @@ import { searchFlights, formatOffersForPrompt } from "../../../../lib/amadeus.js
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent";
 
 // ── Validation ────────────────────────────────────────────────────────────────
 export function validateRequirements(requirements: Record<string, any>): ValidationResult {
