@@ -18,22 +18,28 @@
     "tags": ["crypto", "defi", "web3", "ethereum"]
   },
   "consensus-2026": {
-    "name": "Consensus 2026",
+    "name": "Consensus Miami 2026",
     "slug": "consensus-2026",
-    "dates": "May 2026 (TBC)",
-    "side_events_dates": "TBC",
-    "venue": "Austin Convention Center (likely)",
-    "city": "Austin",
-    "state": "TX",
+    "dates": "May 5-7, 2026",
+    "side_events_dates": "May 3-4, 2026",
+    "venue": "Miami Beach Convention Center",
+    "city": "Miami",
+    "state": "FL",
     "country": "USA",
-    "airport": "AUS",
-    "recommended_arrival": "1 day before",
-    "recommended_departure": "1 day after",
-    "recommended_hotel_areas": ["Downtown Austin", "6th Street area", "South Congress"],
-    "notable_side_events": ["Various Austin Blockchain Week events"],
-    "visa_notes": "US passport: no visa needed",
-    "website": "https://consensus2025.coindesk.com",
-    "tags": ["crypto", "blockchain", "bitcoin", "ethereum", "defi"]
+    "airport": "MIA",
+    "recommended_arrival": "May 3",
+    "recommended_departure": "May 8",
+    "recommended_hotel_areas": ["South Beach", "Midtown Miami", "Brickell", "Downtown Miami"],
+    "notable_side_events": [
+      "Miami Blockchain Week",
+      "NFT side events",
+      "DeFi Summit",
+      "VC networking dinners"
+    ],
+    "visa_notes": "No visa required for US passport holders (domestic travel)",
+    "website": "https://consensus.coindesk.com",
+    "tags": ["crypto", "blockchain", "bitcoin", "ethereum", "defi"],
+    "airport_alt": "FLL"
   },
   "ethdenver-2026": {
     "name": "ETHDenver 2026",
