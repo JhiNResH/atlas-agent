@@ -93,17 +93,32 @@ If ${year} details are not yet announced or you only find ${year - 1} data → r
 
     // *** Name validation: returned conference must roughly match the query ***
     // Prevents Gemini from substituting a related but different event
+    // Strategy: all "distinctive" query words (len > 5, not year/common words) must appear in result name
+    const COMMON_WORDS = new Set([
+      "conference",
+      "summit",
+      "forum",
+      "event",
+      "crypto",
+      "blockchain",
+      "solana",
+      "ethereum",
+      "bitcoin",
+    ]);
     const returnedName = (parsed.name || "").toLowerCase();
-    const queryWords = conferenceName
+    const distinctiveWords = conferenceName
       .toLowerCase()
       .split(/\s+/)
-      .filter((w) => w.length > 3);
-    const nameMatches = queryWords.filter((w) => returnedName.includes(w)).length;
-    if (queryWords.length > 0 && nameMatches === 0) {
-      console.warn(
-        `[conferenceSearch] Rejected — returned name "${parsed.name}" doesn't match query "${conferenceName}"`
-      );
-      return null;
+      .filter((w) => w.length > 5 && !COMMON_WORDS.has(w) && !/^\d+$/.test(w));
+
+    if (distinctiveWords.length > 0) {
+      const allMatch = distinctiveWords.every((w) => returnedName.includes(w));
+      if (!allMatch) {
+        console.warn(
+          `[conferenceSearch] Rejected — "${parsed.name}" doesn't match distinctive words [${distinctiveWords}] from query "${conferenceName}"`
+        );
+        return null;
+      }
     }
 
     return { ...parsed, source: "web-search" };
