@@ -77,8 +77,11 @@ CONFERENCE DATA (verified):
 - Visa (US Passport): ${confData.visa_notes}
 `
       : `
-CONFERENCE: ${conference} (not in DB — use your knowledge for dates/venue)
-Note: If you don't have verified dates, indicate uncertainty.
+CONFERENCE: ${conference}
+⚠️ IMPORTANT: Dates/venue for ${new Date().getFullYear()} are NOT confirmed. 
+- Do NOT use ${new Date().getFullYear() - 1} dates as if they're ${new Date().getFullYear()} data
+- If you don't have verified ${new Date().getFullYear()} info, explicitly say "dates TBD"
+- Focus on flight logistics to the likely city/country based on past history
 `;
 
   const prefsContext = userPrefs ? `\nUSER PREFERENCES: ${JSON.stringify(userPrefs)}` : "";
@@ -186,12 +189,18 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
 
   // Web search if conference not in DB or has TBC dates
   let liveInfo = null;
+  let notYetAnnounced = false;
   if (!confData || confData.dates.includes("TBC")) {
     console.log(`[hermes] Conference "${conference}" not in DB or TBC — searching web…`);
     liveInfo = await searchConferenceInfo(conference);
     if (liveInfo) {
       console.log(
         `[hermes] Web search found: ${liveInfo.name} @ ${liveInfo.city}, ${liveInfo.dates}`
+      );
+    } else {
+      notYetAnnounced = !confData; // only flag if also not in static DB
+      console.log(
+        `[hermes] No confirmed ${new Date().getFullYear()} data found for "${conference}"`
       );
     }
   }
@@ -253,6 +262,17 @@ export async function executeJob(requirements: Record<string, any>): Promise<Exe
     livePrice,
     liveInfo,
   });
+
+  // If dates not yet announced and not in DB, say so honestly
+  if (notYetAnnounced) {
+    return {
+      deliverable: JSON.stringify({
+        report: `# Hermes: ${conference}\n\n⏳ **${new Date().getFullYear()} dates not yet announced.**\n\nHermes searched the web but could not find confirmed ${new Date().getFullYear()} details for this conference. Check the official website or follow their socials for the announcement.\n\nOnce dates are confirmed, retry this job for a full flight + hotel plan.\n\n*Powered by Hermes — Crypto Travel Arbitrage Intelligence*`,
+        structured: { conference_name: conference, data_source: "not-announced" },
+        poweredBy: "Hermes",
+      }),
+    };
+  }
 
   if (!rawReport) {
     return {

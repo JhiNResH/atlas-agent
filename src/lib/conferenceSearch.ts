@@ -29,22 +29,29 @@ export async function searchConferenceInfo(
   if (!GEMINI_API_KEY) return null;
 
   const year = new Date().getFullYear();
-  const prompt = `Search the web and find the OFFICIAL, CONFIRMED details for "${conferenceName} ${year}".
+  const prompt = `Search the web for the OFFICIAL, CONFIRMED details for "${conferenceName} ${year}".
 
-Return ONLY a JSON object (no markdown, no explanation) with these exact fields:
+STRICT RULES:
+1. Only return data explicitly confirmed for ${year} — not previous years
+2. If you only find ${year - 1} data, that is NOT ${year} data — return null
+3. If the ${year} event hasn't been announced yet, return null
+4. Do NOT extrapolate or guess based on past years
+5. If dates say "TBD" or "coming soon", return null
+
+If you find confirmed ${year} data, return ONLY this JSON (no markdown):
 {
-  "name": "official conference name",
-  "dates": "exact dates e.g. May 5-7, 2026",
+  "name": "official conference name with year",
+  "dates": "confirmed dates e.g. May 5-7, ${year}",
   "city": "city name",
   "country": "country",
   "venue": "venue name",
   "airport": "nearest major airport IATA code e.g. MIA",
   "side_events": "brief description of pre/post-conference events",
-  "visa_notes": "visa situation for US passport holders (1 sentence)"
+  "visa_notes": "visa situation for US passport holders (1 sentence)",
+  "confirmed": true
 }
 
-If you cannot find confirmed information for ${year}, return null.
-Do not guess — only return data you found via web search.`;
+If ${year} details are not yet announced or you only find ${year - 1} data → return exactly: null`;
 
   try {
     const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
