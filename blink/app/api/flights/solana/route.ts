@@ -1,15 +1,19 @@
 /**
- * Dialect Blink endpoint for Hermes flight queries
+ * Solana Dialect Blink endpoint for Hermes flight queries
  *
- * GET  /api/flights?conference=TOKEN2049 → Blink metadata JSON
- * POST /api/flights                      → Execute query after payment
+ * GET  /api/flights/solana?conference=TOKEN2049 → Solana Blink metadata JSON
+ * POST /api/flights/solana                      → Build tx or execute query after payment
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { PublicKey } from "@solana/web3.js";
 import { findConference } from "@/lib/conferences";
-import { verifyPayment, getPaymentInfo } from "@/lib/payment";
+import {
+  buildUsdcTransferTx,
+  verifySolanaPayment,
+  getSolanaPaymentInfo,
+} from "@/lib/solana-payment";
 import { queryConferenceFlights, formatForBlink } from "@/lib/hermes";
-import { getSolanaPaymentInfo } from "@/lib/solana-payment";
 
 // CORS headers for Dialect Blink
 const CORS_HEADERS = {
@@ -26,19 +30,11 @@ export async function OPTIONS() {
 }
 
 /**
- * GET handler - returns Dialect Blink metadata
+ * GET handler - returns Solana Dialect Blink metadata
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const conferenceQuery = searchParams.get("conference") || "TOKEN2049";
-  const chain = searchParams.get("chain");
-
-  // Redirect to Solana endpoint if chain=solana
-  if (chain === "solana") {
-    const solanaUrl = new URL("/api/flights/solana", request.url);
-    solanaUrl.search = searchParams.toString();
-    return NextResponse.redirect(solanaUrl);
-  }
 
   const conference = findConference(conferenceQuery);
 
@@ -55,11 +51,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Build Blink metadata per Dialect spec
+  // Build Solana Blink metadata per Dialect spec
   const blinkMetadata = {
     type: "action",
     title: `Check flights to ${conference.name}`,
-    description: `${conference.dates} · ${conference.venue} · $0.25 USDC on Base`,
+    description: `${conference.dates} · ${conference.venue} · $0.25 USDC on Solana`,
     icon: "https://hermes-acp.vercel.app/hermes-icon.png",
     label: "Check Flights",
     links: {
@@ -67,7 +63,7 @@ export async function GET(request: NextRequest) {
         {
           type: "transaction",
           label: "Check Flights — $0.25 USDC",
-          href: `/api/flights?conference=${conference.slug}&origin={origin}`,
+          href: `/api/flights/solana?conference=${conference.slug}&origin={origin}`,
           parameters: [
             {
               name: "origin",
@@ -90,7 +86,7 @@ export async function GET(request: NextRequest) {
         airport: conference.airport,
         venue: conference.venue,
       },
-      payment: getPaymentInfo(),
+      payment: getSolanaPaymentInfo(),
     },
   };
 
@@ -98,17 +94,36 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST handler - execute flight query after payment verification
+ * POST handler - build unsigned tx or execute flight query after payment
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Extract parameters from Dialect Blink POST
+    // Extract parameters
     const { searchParams } = new URL(request.url);
     const conferenceQuery = searchParams.get("conference") || body.conference;
     const origin = searchParams.get("origin") || body.origin;
-    const txHash = body.signature || body.txHash || body.transaction;
+
+    // Dialect sends 'account' as the user's wallet public key
+    const account = body.account;
+    // After tx is signed and submitted, Dialect sends 'signature'
+    const signature = body.signature;
+
+    // Validate account (required for Solana Blinks)
+    if (!account) {
+      return NextResponse.json(
+        {
+          type: "action",
+          title: "Missing account",
+          description: "Wallet account is required for Solana transactions",
+          icon: "https://hermes-acp.vercel.app/hermes-icon.png",
+          disabled: true,
+          error: { message: "Missing account parameter" },
+        },
+        { status: 400, headers: CORS_HEADERS }
+      );
+    }
 
     // Validate required params
     if (!conferenceQuery || !origin) {
@@ -140,42 +155,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // DEV_SKIP_PAYMENT bypass or verify payment
     const skipPayment = process.env.DEV_SKIP_PAYMENT === "true";
 
-    if (!skipPayment && !txHash) {
-      // Return transaction request for payment
+    // If no signature, build and return unsigned transaction
+    if (!signature && !skipPayment) {
+      let userPubkey: PublicKey;
+      try {
+        userPubkey = new PublicKey(account);
+      } catch {
+        return NextResponse.json(
+          {
+            type: "action",
+            title: "Invalid account",
+            description: "Invalid Solana wallet address",
+            icon: "https://hermes-acp.vercel.app/hermes-icon.png",
+            disabled: true,
+            error: { message: "Invalid Solana wallet address" },
+          },
+          { status: 400, headers: CORS_HEADERS }
+        );
+      }
+
+      const txResult = await buildUsdcTransferTx(userPubkey, 0.25);
+
+      if ("error" in txResult) {
+        return NextResponse.json(
+          {
+            type: "action",
+            title: "Transaction build failed",
+            description: txResult.error,
+            icon: "https://hermes-acp.vercel.app/hermes-icon.png",
+            disabled: true,
+            error: { message: txResult.error },
+          },
+          { status: 500, headers: CORS_HEADERS }
+        );
+      }
+
+      // Return unsigned transaction for Dialect to sign
       return NextResponse.json(
         {
-          type: "transaction",
-          title: `Pay $0.25 USDC to check flights`,
-          description: `${conference.name} from ${origin}`,
-          icon: "https://hermes-acp.vercel.app/hermes-icon.png",
-          label: "Pay & Check",
-          // Dialect Blink will handle the EVM transaction
-          chain: "base",
-          transaction: {
-            to: process.env.HERMES_WALLET_ADDRESS,
-            value: "0",
-            data: "0x", // USDC transfer will be handled by Dialect
-          },
-          links: {
-            actions: [
-              {
-                type: "post",
-                label: "Confirm Payment",
-                href: `/api/flights?conference=${conference.slug}&origin=${encodeURIComponent(origin)}`,
-              },
-            ],
-          },
+          transaction: txResult.transaction,
+          message: `Pay $0.25 USDC to check flights from ${origin} to ${conference.name}`,
         },
         { status: 200, headers: CORS_HEADERS }
       );
     }
 
-    // Verify payment if txHash provided
-    if (txHash && !skipPayment) {
-      const paymentResult = await verifyPayment(txHash);
+    // Verify payment if signature provided
+    if (signature && !skipPayment) {
+      const paymentResult = await verifySolanaPayment(signature);
       if (!paymentResult.valid) {
         return NextResponse.json(
           {
@@ -190,12 +219,12 @@ export async function POST(request: NextRequest) {
         );
       }
       console.log(
-        `[blink] Payment verified: ${paymentResult.amount} USDC from ${paymentResult.from}`
+        `[blink-solana] Payment verified: ${paymentResult.amount} USDC from ${paymentResult.from}`
       );
     }
 
     // Call Hermes conference_travel handler
-    console.log(`[blink] Querying flights: ${origin} → ${conference.name}`);
+    console.log(`[blink-solana] Querying flights: ${origin} → ${conference.name}`);
     const result = await queryConferenceFlights({
       conference: conference.slug,
       origin: origin.trim().toUpperCase(),
@@ -250,7 +279,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response, { status: 200, headers: CORS_HEADERS });
   } catch (err) {
-    console.error("[blink] POST error:", err);
+    console.error("[blink-solana] POST error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
       {
