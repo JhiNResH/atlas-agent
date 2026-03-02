@@ -24,7 +24,8 @@
     "erc8004:update-uri": "tsx scripts/erc8004-update-uri.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "swap:execute": "tsx src/scripts/execute-trust-swap.ts"
   },
   "dependencies": {
     "axios": "^1.13.4",
